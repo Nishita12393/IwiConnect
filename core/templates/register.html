@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Registration</title>
+</head>
+<body>
+    <h2>Register</h2>
+    {% if messages %}
+        <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <ul>
+            {% for error in form.non_field_errors %}
+                <li style="color:red">{{ error }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.full_name.label_tag }} {{ form.full_name }}<br>
+        {{ form.email.label_tag }} {{ form.email }}<br>
+        {{ form.password.label_tag }} {{ form.password }}<br>
+        {{ form.iwi.label_tag }} {{ form.iwi }}<br>
+        {{ form.hapu.label_tag }}
+        <select id="id_hapu" name="hapu">
+            <option value="">---------</option>
+        </select><br>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const iwiSelect = document.getElementById('id_iwi');
+            const hapuSelect = document.getElementById('id_hapu');
+            iwiSelect.addEventListener('change', function() {
+                const iwiId = iwiSelect.value;
+                fetch(`/api/get_hapus/?iwi_id=${iwiId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        hapuSelect.innerHTML = '<option value="">---------</option>';
+                        data.forEach(hapu => {
+                            const option = document.createElement('option');
+                            option.value = hapu.id;
+                            option.textContent = hapu.name;
+                            hapuSelect.appendChild(option);
+                        });
+                    });
+            });
+        });
+        </script>
+        {{ form.citizenship_document.label_tag }} {{ form.citizenship_document }}<br>
+        <button type="submit">Register</button>
+    </form>
+</body>
+</html> 
