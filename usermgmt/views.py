@@ -12,14 +12,20 @@ def is_admin(user):
 @user_passes_test(is_admin)
 def user_list(request):
     state = request.GET.get('state', '')
-    users = CustomUser.objects.all()
+    users = CustomUser.objects.all().order_by('-registered_at')
     if state:
         users = users.filter(state=state)
     if request.method == 'POST':
         user_id = request.POST.get('verify_user_id')
-        user_to_verify = get_object_or_404(CustomUser, id=user_id)
-        user_to_verify.state = 'VERIFIED'
-        user_to_verify.save()
+        reject_id = request.POST.get('reject_user_id')
+        if user_id:
+            user_to_verify = get_object_or_404(CustomUser, id=user_id)
+            user_to_verify.state = 'VERIFIED'
+            user_to_verify.save()
+        elif reject_id:
+            user_to_reject = get_object_or_404(CustomUser, id=reject_id)
+            user_to_reject.state = 'REJECTED'
+            user_to_reject.save()
         return redirect(f"{reverse('user_list')}?state={state}")
     return render(request, 'usermgmt/user_list.html', {
         'users': users,

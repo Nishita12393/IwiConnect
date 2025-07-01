@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 import os
 import uuid
 from django.conf import settings
+from django.utils import timezone
 
 # Create your models here.
 
@@ -54,6 +55,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     citizenship_document = models.FileField(upload_to=citizenship_document_upload_to, blank=True, null=True)  # type: ignore
     is_active = models.BooleanField(default=True) # type: ignore
     is_staff = models.BooleanField(default=False) # type: ignore
+    registered_at = models.DateTimeField(auto_now_add=True)
     STATE_CHOICES = [
         ('PENDING_VERIFICATION', 'Pending Verification'),
         ('VERIFIED', 'Verified'),

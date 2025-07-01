@@ -23,6 +23,7 @@
                 <th>Hapu</th>
                 <th>State</th>
                 <th>Document</th>
+                <th>Registered At</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -39,12 +40,18 @@
                     <a href="{% url 'view_citizenship_document' user.id %}" target="_blank">View Document</a>
                     {% else %}-{% endif %}
                 </td>
+                <td>{{ user.registered_at|date:'Y-m-d H:i' }}</td>
                 <td>
                     {% if user.state == 'PENDING_VERIFICATION' %}
                     <form method="post" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="verify_user_id" value="{{ user.id }}">
                         <button type="submit">Verify</button>
+                    </form>
+                    <form method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="reject_user_id" value="{{ user.id }}">
+                        <button type="submit" style="color:red">Reject</button>
                     </form>
                     {% else %}-{% endif %}
                 </td>
