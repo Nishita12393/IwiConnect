@@ -1,0 +1,28 @@
+{% extends 'core/base.html' %}
+{% block page_title %}My Events - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">My Events</h2>
+    {% if joined_events %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for event in joined_events %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    {% if event.attachment %}
+                        <img src="{{ event.attachment.url }}" class="card-img-top" alt="Event Image" style="max-height: 180px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text text-muted mb-1">{{ event.start_datetime|date:'D, d M Y H:i' }}</p>
+                        <p class="card-text mb-2">{{ event.location|default:'TBA' }}</p>
+                        <a href="{% url 'event_detail' event.id %}" class="btn btn-primary btn-sm">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">You have not joined any events yet.</div>
+    {% endif %}
+</div>
+{% endblock %} 

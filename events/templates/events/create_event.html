@@ -1,0 +1,89 @@
+{% extends 'core/base.html' %}
+{% load form_tags %}
+{% block page_title %}Create New Event - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="mb-4">Create New Event</h2>
+                    {% if messages %}
+                      {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                          {{ message }}
+                          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                      {% endfor %}
+                    {% endif %}
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+                        <div class="mb-3">
+                            {{ form.title.label_tag }}
+                            <input type="text" name="title" id="id_title" class="form-control{% if form.title.errors %} is-invalid{% endif %}" required minlength="5" maxlength="200" value="{{ form.title.value|default:'' }}">
+                            {% if form.title.errors %}<div class="invalid-feedback">{{ form.title.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.description.label_tag }}
+                            <textarea name="description" id="id_description" class="form-control{% if form.description.errors %} is-invalid{% endif %}" required minlength="10" maxlength="2000" rows="4">{{ form.description.value|default:'' }}</textarea>
+                            {% if form.description.errors %}<div class="invalid-feedback">{{ form.description.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.start_datetime.label_tag }}
+                                <input type="datetime-local" name="start_datetime" id="id_start_datetime" class="form-control{% if form.start_datetime.errors %} is-invalid{% endif %}" required value="{{ form.start_datetime.value|default:'' }}">
+                                {% if form.start_datetime.errors %}<div class="invalid-feedback">{{ form.start_datetime.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.end_datetime.label_tag }}
+                                <input type="datetime-local" name="end_datetime" id="id_end_datetime" class="form-control{% if form.end_datetime.errors %} is-invalid{% endif %}" required value="{{ form.end_datetime.value|default:'' }}">
+                                {% if form.end_datetime.errors %}<div class="invalid-feedback">{{ form.end_datetime.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.location.label_tag }}
+                            <input type="text" name="location" id="id_location" class="form-control{% if form.location.errors %} is-invalid{% endif %}" required minlength="2" maxlength="200" value="{{ form.location.value|default:'' }}">
+                            {% if form.location.errors %}<div class="invalid-feedback">{{ form.location.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.visibility.label_tag }}
+                            {{ form.visibility|add_class:'form-select' }}
+                            {% if form.visibility.errors %}<div class="invalid-feedback d-block">{{ form.visibility.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.attachment.label_tag }}
+                            <input type="file" name="attachment" id="id_attachment" class="form-control{% if form.attachment.errors %} is-invalid{% endif %}" accept=".jpg,.jpeg,.png">
+                            {% if form.attachment.errors %}<div class="invalid-feedback">{{ form.attachment.errors.0 }}</div>{% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Event</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // File validation
+    const fileInput = document.getElementById('id_attachment');
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        const file = fileInput.files[0];
+        if (file) {
+          const validTypes = ['image/jpeg', 'image/png'];
+          if (!validTypes.includes(file.type)) {
+            alert('Only JPG or PNG files are allowed.');
+            fileInput.value = '';
+          } else if (file.size > 2 * 1024 * 1024) {
+            alert('Image file size must be under 2MB.');
+            fileInput.value = '';
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %} 
