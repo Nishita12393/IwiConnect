@@ -1,0 +1,101 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Consultation: {{ proposal.title }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title mb-0">{{ proposal.title }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h5>Description</h5>
+                    <p class="mb-3">{{ proposal.description }}</p>
+                    
+                    <h5>Voting Options</h5>
+                    {% if voted %}
+                        <div class="alert alert-info">
+                            <strong>You have already voted.</strong>
+                            {% if user_vote %}
+                                <p class="mb-0">Your vote: <span class="badge bg-primary">{{ user_vote.voting_option.text }}</span></p>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {% for option in proposal.voting_options.all %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="voting_option" id="option{{ option.id }}" value="{{ option.id }}" required>
+                                        <label class="form-check-label" for="option{{ option.id }}">{{ option.text }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if proposal.enable_comments %}
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Comment (optional):</label>
+                                    <textarea class="form-control" name="comment" id="comment" rows="3"></textarea>
+                                </div>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary">Submit Vote</button>
+                        </form>
+                        {% if comment_added %}
+                            <div class="alert alert-success mt-3">Your comment has been added.</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Type:</strong> <span class="badge bg-primary">{{ proposal.get_consultation_type_display }}</span></p>
+                            <p><strong>Iwi:</strong> {{ proposal.iwi|default:"Not specified" }}</p>
+                            <p><strong>Hapu:</strong> {{ proposal.hapu|default:"Not specified" }}</p>
+                            <p><strong>Start:</strong> {{ proposal.start_date|date:'Y-m-d H:i' }}</p>
+                            <p><strong>End:</strong> {{ proposal.end_date|date:'Y-m-d H:i' }}</p>
+                            <p><strong>Enable Comments:</strong> 
+                                {% if proposal.enable_comments %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}
+                            </p>
+                            <p><strong>Anonymous Feedback:</strong> 
+                                {% if proposal.anonymous_feedback %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}
+                            </p>
+                            <p><strong>Created By:</strong> {{ proposal.created_by.full_name }}</p>
+                            <p><strong>Created At:</strong> {{ proposal.created_at|date:'Y-m-d H:i' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if proposal.enable_comments %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Comments</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if comments %}
+                            <div class="list-group">
+                                {% for comment in comments %}
+                                <div class="list-group-item">
+                                    <p class="mb-1">{{ comment.text }}</p>
+                                    <small class="text-muted">
+                                        {% if comment.user %}by {{ comment.user.full_name }}{% else %}(Anonymous){% endif %}
+                                    </small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No comments yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="mt-3">
+                <a href="{% url 'active_consultations' %}" class="btn btn-secondary">&larr; Back to Active Consultations</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,124 @@
+{% extends 'core/base.html' %}
+{% load form_tags %}
+{% block page_title %}New Consultation - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card shadow-sm mt-5">
+                <div class="card-body">
+                    <h2 class="mb-4">New Consultation</h2>
+                    {% if messages %}
+                      {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                          {{ message }}
+                          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                      {% endfor %}
+                    {% endif %}
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                {{ form.title.label_tag }}
+                                <input type="text" name="title" id="id_title" class="form-control{% if form.title.errors %} is-invalid{% endif %}" required minlength="5" maxlength="200" value="{{ form.title.value|default:'' }}">
+                                {% if form.title.errors %}<div class="invalid-feedback">{{ form.title.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                {{ form.description.label_tag }}
+                                <textarea name="description" id="id_description" class="form-control{% if form.description.errors %} is-invalid{% endif %}" required minlength="10" maxlength="2000" rows="4">{{ form.description.value|default:'' }}</textarea>
+                                {% if form.description.errors %}<div class="invalid-feedback">{{ form.description.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                {{ form.consultation_type.label_tag }}
+                                {{ form.consultation_type|add_class:'form-select' }}
+                                {% if form.consultation_type.errors %}<div class="invalid-feedback d-block">{{ form.consultation_type.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.iwi.label_tag }}
+                                {{ form.iwi|add_class:'form-select' }}
+                                {% if form.iwi.errors %}<div class="invalid-feedback d-block">{{ form.iwi.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.hapu.label_tag }}
+                                {{ form.hapu|add_class:'form-select' }}
+                                {% if form.hapu.errors %}<div class="invalid-feedback d-block">{{ form.hapu.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.start_date.label_tag }}
+                                <input type="datetime-local" name="start_date" id="id_start_date" class="form-control{% if form.start_date.errors %} is-invalid{% endif %}" required value="{{ form.start_date.value|default:'' }}">
+                                {% if form.start_date.errors %}<div class="invalid-feedback">{{ form.start_date.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.end_date.label_tag }}
+                                <input type="datetime-local" name="end_date" id="id_end_date" class="form-control{% if form.end_date.errors %} is-invalid{% endif %}" required value="{{ form.end_date.value|default:'' }}">
+                                {% if form.end_date.errors %}<div class="invalid-feedback">{{ form.end_date.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                {{ form.voting_options.label_tag }}
+                                <textarea name="voting_options" id="id_voting_options" class="form-control{% if form.voting_options.errors %} is-invalid{% endif %}" required minlength="5" maxlength="500" rows="4">{{ form.voting_options.value|default:'' }}</textarea>
+                                {% if form.voting_options.help_text %}<small class="form-text text-muted">{{ form.voting_options.help_text }}</small>{% endif %}
+                                {% if form.voting_options.errors %}<div class="invalid-feedback">{{ form.voting_options.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.enable_comments }}
+                                    <label class="form-check-label" for="{{ form.enable_comments.id_for_label }}">{{ form.enable_comments.label }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.anonymous_feedback }}
+                                    <label class="form-check-label" for="{{ form.anonymous_feedback.id_for_label }}">{{ form.anonymous_feedback.label }}</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.is_draft }}
+                                    <label class="form-check-label" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary">Save Consultation</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var typeField = document.getElementById('id_consultation_type');
+        var hapuField = document.getElementById('id_hapu');
+        function toggleHapu() {
+            if (typeField.value === 'IWI') {
+                hapuField.value = '';
+                hapuField.disabled = true;
+            } else {
+                hapuField.disabled = false;
+            }
+        }
+        if (typeField && hapuField) {
+            typeField.addEventListener('change', toggleHapu);
+            toggleHapu();
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,68 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Proposal Detail - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title mb-0">{{ proposal.title }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h5>Description</h5>
+                    <p class="mb-3">{{ proposal.description }}</p>
+                    
+                    <h5>Voting Options</h5>
+                    <ul class="list-group list-group-flush mb-3">
+                        {% for option in proposal.voting_options.all %}
+                        <li class="list-group-item">{{ option.text }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Type:</strong> <span class="badge bg-primary">{{ proposal.get_consultation_type_display }}</span></p>
+                            <p><strong>Iwi:</strong> {{ proposal.iwi|default:"Not specified" }}</p>
+                            <p><strong>Hapu:</strong> {{ proposal.hapu|default:"Not specified" }}</p>
+                            <p><strong>Start:</strong> {{ proposal.start_date|date:'Y-m-d H:i' }}</p>
+                            <p><strong>End:</strong> {{ proposal.end_date|date:'Y-m-d H:i' }}</p>
+                            <p><strong>Enable Comments:</strong> 
+                                {% if proposal.enable_comments %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}
+                            </p>
+                            <p><strong>Anonymous Feedback:</strong> 
+                                {% if proposal.anonymous_feedback %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}
+                            </p>
+                            <p><strong>Created By:</strong> {{ proposal.created_by.full_name }}</p>
+                            <p><strong>Created At:</strong> {{ proposal.created_at|date:'Y-m-d H:i' }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Access</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Consultation Type:</strong> {{ proposal.get_consultation_type_display }}</p>
+                            {% if proposal.consultation_type == 'IWI' %}
+                                <p><strong>Restricted to:</strong> {{ proposal.iwi.name }}</p>
+                            {% elif proposal.consultation_type == 'HAPU' %}
+                                <p><strong>Restricted to:</strong> {{ proposal.hapu.name }} ({{ proposal.hapu.iwi.name }})</p>
+                            {% else %}
+                                <p><strong>Access:</strong> All members</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <a href="{% url 'proposal_list' %}" class="btn btn-secondary">&larr; Back to List</a>
+                <a href="{% url 'active_consultations' %}" class="btn btn-primary">View Active Consultations</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
