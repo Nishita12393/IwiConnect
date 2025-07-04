@@ -16,25 +16,29 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from core.views import register, get_hapus, get_hapus_htmx, login_view, admin_dashboard, logout_view, user_dashboard
-from django.http import HttpResponse
+from core.views import register, get_hapus, get_hapus_htmx, login_view, dashboard, logout_view, home, profile, password_reset_request, password_reset_confirm
 from django.conf import settings
 from django.conf.urls.static import static
-
-def home(request):
-    return HttpResponse('Welcome to the Home Page!')
+import os
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('register/', register, name='register'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
-    path('', admin_dashboard, name='home'),
+    path('forgot-password/', password_reset_request, name='password_reset_request'),
+    path('reset-password/<str:token>/', password_reset_confirm, name='password_reset_confirm'),
+    path('', home, name='home'),
+    path('consultations/', include('consultation.urls')),
     path('api/get_hapus/', get_hapus, name='get_hapus'),
     path('api/get_hapus_htmx/', get_hapus_htmx, name='get_hapus_htmx'),
     path('usermgmt/', include('usermgmt.urls')),
-    path('dashboard/', user_dashboard, name='user_dashboard'),
+    path('dashboard/', dashboard, name='dashboard'),
+    path('notices/', include('notice.urls')),
+    path('events/', include('events.urls')),
+    path('profile/', profile, name='profile'),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=os.path.join(settings.BASE_DIR, 'static'))

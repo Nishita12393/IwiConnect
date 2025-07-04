@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import ssl
+from core.config import Config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +42,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'usermgmt',
+    'consultation',
+    'notice',
+    'events',
 ]
 
 MIDDLEWARE = [
@@ -61,9 +66,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.views.app_name_context_processor',
             ],
         },
     },
@@ -78,11 +85,11 @@ WSGI_APPLICATION = 'iwi_web_app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'iwi_web',
-        'USER': 'root',
-        'PASSWORD': 'toor',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': Config.get_db_name(),
+        'USER': Config.get_db_user(),
+        'PASSWORD': Config.get_db_password(),
+        'HOST': Config.get_db_host(),
+        'PORT': Config.get_db_port(),
     }
 }
 
@@ -111,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Pacific/Auckland'
 
 USE_I18N = True
 
@@ -121,7 +128,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -134,3 +144,12 @@ LOGIN_URL = '/login'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = '9f9a0108cc9598'
+EMAIL_HOST_PASSWORD = '9e6d93b19c187b'
+EMAIL_USE_TLS = True
+EMAIL_SSL_CONTEXT = ssl._create_unverified_context()
+DEFAULT_FROM_EMAIL = 'IwiConnect <noreply@iwiconnect.local>'
