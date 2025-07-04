@@ -1,57 +1,104 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>User Registration</title>
-</head>
-<body>
-    <h2>Register</h2>
-    {% if messages %}
-        <ul>
-        {% for message in messages %}
-            <li>{{ message }}</li>
-        {% endfor %}
-        </ul>
-    {% endif %}
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {% if form.non_field_errors %}
-            <ul>
-            {% for error in form.non_field_errors %}
-                <li style="color:red">{{ error }}</li>
-            {% endfor %}
+{% extends 'core/base.html' %}
+{% load form_tags %}
+{% block page_title %}Register - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-sm mt-5">
+      <div class="card-body">
+        <h2 class="card-title text-center mb-4">Register</h2>
+        {% if messages %}
+          <div class="alert alert-info">
+            <ul class="mb-0">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
             </ul>
+          </div>
         {% endif %}
-        {{ form.full_name.label_tag }} {{ form.full_name }}<br>
-        {{ form.email.label_tag }} {{ form.email }}<br>
-        {{ form.password.label_tag }} {{ form.password }}<br>
-        {{ form.iwi.label_tag }} {{ form.iwi }}<br>
-        {{ form.hapu.label_tag }}
-        <select id="id_hapu" name="hapu">
-            <option value="">---------</option>
-        </select><br>
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+                  {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+          <div class="mb-3">
+            {{ form.full_name.label_tag }}
+            {{ form.full_name|add_class:'form-control' }}
+            {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            {{ form.email.label_tag }}
+            {{ form.email|add_class:'form-control' }}
+            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            {{ form.password.label_tag }}
+            {{ form.password|add_class:'form-control' }}
+            {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            {{ form.iwi.label_tag }}
+            {{ form.iwi|add_class:'form-select' }}
+            {% if form.iwi.errors %}<div class="text-danger small">{{ form.iwi.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            {{ form.hapu.label_tag }}
+            <select id="id_hapu" name="hapu" class="form-select">
+              <option value="">---------</option>
+            </select>
+            {% if form.hapu.errors %}<div class="text-danger small">{{ form.hapu.errors.0 }}</div>{% endif %}
+          </div>
+          <script>
+          document.addEventListener('DOMContentLoaded', function() {
             const iwiSelect = document.getElementById('id_iwi');
             const hapuSelect = document.getElementById('id_hapu');
             iwiSelect.addEventListener('change', function() {
-                const iwiId = iwiSelect.value;
-                fetch(`/api/get_hapus/?iwi_id=${iwiId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        hapuSelect.innerHTML = '<option value="">---------</option>';
-                        data.forEach(hapu => {
-                            const option = document.createElement('option');
-                            option.value = hapu.id;
-                            option.textContent = hapu.name;
-                            hapuSelect.appendChild(option);
-                        });
-                    });
+              const iwiId = iwiSelect.value;
+              fetch(`/api/get_hapus/?iwi_id=${iwiId}`)
+                .then(response => response.json())
+                .then(data => {
+                  hapuSelect.innerHTML = '<option value="">---------</option>';
+                  data.forEach(hapu => {
+                    const option = document.createElement('option');
+                    option.value = hapu.id;
+                    option.textContent = hapu.name;
+                    hapuSelect.appendChild(option);
+                  });
+                });
             });
-        });
-        </script>
-        {{ form.citizenship_document.label_tag }} {{ form.citizenship_document }}<br>
-        <button type="submit">Register</button>
-    </form>
-</body>
-</html> 
+            // File validation
+            const fileInput = document.getElementById('id_citizenship_document');
+            if (fileInput) {
+              fileInput.addEventListener('change', function() {
+                const file = fileInput.files[0];
+                if (file) {
+                  const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+                  if (!validTypes.includes(file.type)) {
+                    alert('Only PDF, JPG, or PNG files are allowed.');
+                    fileInput.value = '';
+                  } else if (file.size > 2 * 1024 * 1024) {
+                    alert('File size must be under 2MB.');
+                    fileInput.value = '';
+                  }
+                }
+              });
+            }
+          });
+          </script>
+          <div class="mb-3">
+            {{ form.citizenship_document.label_tag }}
+            <input type="file" name="citizenship_document" id="id_citizenship_document" class="form-control{% if form.citizenship_document.errors %} is-invalid{% endif %}" required accept=".pdf,.jpg,.jpeg,.png">
+            {% if form.citizenship_document.errors %}<div class="text-danger small">{{ form.citizenship_document.errors.0 }}</div>{% endif %}
+          </div>
+          <button type="submit" class="btn btn-success w-100">Register</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

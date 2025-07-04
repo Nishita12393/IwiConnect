@@ -70,3 +70,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+class IwiLeader(models.Model):
+    iwi = models.ForeignKey(Iwi, on_delete=models.CASCADE, related_name='leaders')
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='iwi_leaderships')
+    class Meta:
+        unique_together = ('iwi', 'user')
+
+class HapuLeader(models.Model):
+    hapu = models.ForeignKey(Hapu, on_delete=models.CASCADE, related_name='leaders')
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='hapu_leaderships')
+    class Meta:
+        unique_together = ('hapu', 'user')

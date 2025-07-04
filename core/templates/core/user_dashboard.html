@@ -1,10 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>User Dashboard</title>
-</head>
-<body>
-    <h2>Hi {{ user.full_name }}</h2>
-    <a href="/logout/">Logout</a>
-</body>
-</html> 
+{% extends 'core/base.html' %}
+{% block page_title %}User Dashboard - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">Welcome, {{ user.full_name }}</h2>
+  <div class="mb-4">
+    <a href="/logout/" class="btn btn-outline-secondary">Logout</a>
+    {% if user.iwi_leaderships.all %}
+      <a href="/usermgmt/manage-hapu-leaders/" class="btn btn-primary ms-2">Manage Hapu Leaders</a>
+    {% endif %}
+  </div>
+
+  <div class="row">
+    {% if iwi_leaderships %}
+      <div class="col-12 mb-4">
+        <h3>Your Iwi Leaderships</h3>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+          {% for leadership in iwi_leaderships %}
+            <div class="col">
+              <div class="card h-100 shadow-sm border-primary">
+                <div class="card-body">
+                  <h5 class="card-title text-primary">{{ leadership.iwi.name }}</h5>
+                  <p class="card-text mb-2">Iwi Leader</p>
+                  <a href="/consultations/?iwi={{ leadership.iwi.id }}" class="btn btn-outline-primary btn-sm">Create Consultation</a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if hapu_leaderships %}
+      <div class="col-12 mb-4">
+        <h3>Your Hapu Leaderships</h3>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+          {% for leadership in hapu_leaderships %}
+            <div class="col">
+              <div class="card h-100 shadow-sm border-success">
+                <div class="card-body">
+                  <h5 class="card-title text-success">{{ leadership.hapu.name }}</h5>
+                  <p class="card-text mb-2">Hapu of <strong>{{ leadership.hapu.iwi.name }}</strong></p>
+                  <a href="/consultations/?hapu={{ leadership.hapu.id }}" class="btn btn-outline-success btn-sm">Create Consultation</a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} 

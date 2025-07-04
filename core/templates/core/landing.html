@@ -1,0 +1,120 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block page_title %}{{ app_name }} - Digital Platform for Iwi and Hapu Management{% endblock %}
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-primary text-white py-5">
+    <div class="container px-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Empowering Iwi and Hapu Communities</h1>
+                <p class="lead mb-4">A comprehensive digital platform for managing consultations, notices, and community engagement within Iwi and Hapu organizations.</p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'register' %}" class="btn btn-light btn-lg">Get Started</a>
+                    <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Sign In</a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <img src="{% static 'iwiconnect_logo.png' %}" alt="IwiConnect Logo" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Key Features</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="fas fa-vote-yea fa-2x text-info"></i>
+                        </div>
+                        <h5 class="card-title">Digital Consultations</h5>
+                        <p class="card-text">Create and participate in online consultations with secure voting, comments, and real-time results tracking.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="fas fa-bullhorn fa-2x text-success"></i>
+                        </div>
+                        <h5 class="card-title">Notice Board</h5>
+                        <p class="card-text">Share important announcements, updates, and information with your community through a modern notice board.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="fas fa-user-shield fa-2x text-info"></i>
+                        </div>
+                        <h5 class="card-title">Secure Management</h5>
+                        <p class="card-text">Role-based access control with Iwi and Hapu leadership management, ensuring secure and organized community governance.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="bg-light py-5">
+    <div class="container text-white">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row g-4">
+            <div class="col-md-3 text-center">
+                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+                    <span class="fw-bold">1</span>
+                </div>
+                <h5>Register</h5>
+                <p class="text-white">Create your account and provide your Iwi/Hapu affiliation for verification.</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+                    <span class="fw-bold">2</span>
+                </div>
+                <h5>Get Verified</h5>
+                <p class="text-white">Admin verification ensures only legitimate community members can participate.</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+                    <span class="fw-bold">3</span>
+                </div>
+                <h5>Participate</h5>
+                <p class="text-white">Vote in consultations, read notices, and engage with your community.</p>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+                    <span class="fw-bold">4</span>
+                </div>
+                <h5>Lead</h5>
+                <p class="text-white">Leaders can create consultations, manage notices, and oversee community engagement.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div class="py-5">
+    <div class="container text-center">
+        <h2 class="mb-4">Ready to Join Your Community?</h2>
+        <p class="lead mb-4">Start participating in your Iwi and Hapu's digital community today.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Create Account</a>
+            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">Sign In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %} 
