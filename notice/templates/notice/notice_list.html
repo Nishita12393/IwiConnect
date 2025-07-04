@@ -1,0 +1,75 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Notice Board - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Notice Board</h2>
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label for="audience" class="form-label">Audience</label>
+            <select name="audience" id="audience" class="form-select">
+                <option value="">All</option>
+                <option value="ALL" {% if audience == 'ALL' %}selected{% endif %}>All Users</option>
+                <option value="IWI" {% if audience == 'IWI' %}selected{% endif %}>Iwi</option>
+                <option value="HAPU" {% if audience == 'HAPU' %}selected{% endif %}>Hapu</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="iwi" class="form-label">Iwi</label>
+            <select name="iwi" id="iwi" class="form-select">
+                <option value="">All</option>
+                {% for iwi_obj in iwis %}
+                    <option value="{{ iwi_obj.id }}" {% if iwi|default:'' == iwi_obj.id|stringformat:'s' %}selected{% endif %}>{{ iwi_obj.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="hapu" class="form-label">Hapu</label>
+            <select name="hapu" id="hapu" class="form-select">
+                <option value="">All</option>
+                {% for hapu_obj in hapus %}
+                    <option value="{{ hapu_obj.id }}" {% if hapu|default:'' == hapu_obj.id|stringformat:'s' %}selected{% endif %}>{{ hapu_obj.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-secondary w-100">Filter</button>
+        </div>
+    </form>
+    {% if user.is_staff or user.iwi_leaderships.all or user.hapu_leaderships.all %}
+        <div class="mb-3 text-end">
+            <a href="{% url 'create_notice' %}" class="btn btn-primary">New Notice</a>
+        </div>
+    {% endif %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for notice in page_obj %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ notice.title }}</h5>
+                    <p class="card-text">{{ notice.content|truncatewords:30|safe }}</p>
+                    <p class="card-text"><small class="text-muted">Expires: {{ notice.expiry_date|date:'Y-m-d H:i' }}</small></p>
+                    <a href="{% url 'notice_detail' notice.pk %}" class="btn btn-outline-primary btn-sm">View</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><div class="alert alert-info">No notices found.</div></div>
+        {% endfor %}
+    </div>
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?{% if audience %}audience={{ audience }}&{% endif %}{% if iwi %}iwi={{ iwi }}&{% endif %}{% if hapu %}hapu={{ hapu }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?{% if audience %}audience={{ audience }}&{% endif %}{% if iwi %}iwi={{ iwi }}&{% endif %}{% if hapu %}hapu={{ hapu }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %} 

@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Expire Notice - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Expire Notice</h2>
+    <div class="alert alert-warning">Are you sure you want to expire the notice <strong>{{ notice.title }}</strong>? It will no longer be visible to members.</div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning">Yes, Expire</button>
+        <a href="{% url 'manage_notices' %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+{% endblock %} 

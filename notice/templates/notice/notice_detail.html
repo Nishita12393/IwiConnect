@@ -1,0 +1,35 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Notice: {{ notice.title }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="card mt-4">
+        <div class="card-body">
+            <h2 class="card-title">{{ notice.title }}</h2>
+            {% if acknowledged %}
+                <span class="badge bg-success mb-2">Acknowledged</span>
+            {% endif %}
+            <p class="card-text text-muted">
+                <strong>Audience:</strong> {{ notice.get_audience_display }}
+                {% if notice.iwi %} | Iwi: {{ notice.iwi.name }}{% endif %}
+                {% if notice.hapu %} | Hapu: {{ notice.hapu.name }}{% endif %}<br>
+                <strong>Expires:</strong> {{ notice.expiry_date|date:'Y-m-d H:i' }}<br>
+                <strong>Created By:</strong> {{ notice.created_by.full_name }}
+            </p>
+            <div class="mb-3">
+                {{ notice.content|safe }}
+            </div>
+            {% if notice.attachment %}
+                <div class="mb-3">
+                    <a href="{{ notice.attachment.url }}" target="_blank" class="btn btn-outline-secondary">Download Attachment</a>
+                </div>
+            {% endif %}
+            <a href="{% url 'notice_list' %}" class="btn btn-link">&larr; Back to Notices</a>
+            {% if user == notice.created_by or user.is_staff %}
+                <a href="{% url 'edit_notice' notice.pk %}" class="btn btn-primary ms-2">Edit Notice</a>
+                <a href="{% url 'notice_engagement' notice.pk %}" class="btn btn-info ms-2">View Engagement</a>
+                <a href="{% url 'manage_notices' %}" class="btn btn-secondary ms-2">Manage Notices</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

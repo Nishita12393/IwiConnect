@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Notice Engagement - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Engagement for: {{ notice.title }}</h2>
+    <p>Total Acknowledgments: <strong>{{ acknowledgments|length }}</strong></p>
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Acknowledged At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ack in acknowledgments %}
+            <tr>
+                <td>{{ ack.user.full_name }}</td>
+                <td>{{ ack.user.email }}</td>
+                <td>{{ ack.acknowledged_at|date:'Y-m-d H:i' }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No acknowledgments yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'manage_notices' %}" class="btn btn-link">&larr; Back to Manage Notices</a>
+</div>
+{% endblock %} 

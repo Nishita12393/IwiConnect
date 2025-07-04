@@ -1,0 +1,113 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Manage Notices - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Manage Notices</h2>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Audience</th>
+                <th>Expiry</th>
+                <th>Created By</th>
+                <th>Created At</th>
+                <th>Engagement</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for notice in notices %}
+            <tr>
+                <td>{{ notice.title }}</td>
+                <td>{{ notice.get_audience_display }}{% if notice.iwi %} ({{ notice.iwi.name }}){% endif %}{% if notice.hapu %} ({{ notice.hapu.name }}){% endif %}</td>
+                <td>{{ notice.expiry_date|date:'Y-m-d H:i' }}</td>
+                <td>{{ notice.created_by.full_name }}</td>
+                <td>{{ notice.created_at|date:'Y-m-d H:i' }}</td>
+                <td><a href="{% url 'notice_engagement' notice.pk %}">{{ notice.acknowledgments.count }} viewed</a></td>
+                <td>
+                    <a href="{% url 'edit_notice' notice.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#expireModal{{ notice.pk }}">Expire</button>
+                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ notice.pk }}">Delete</button>
+
+                    <!-- Expire Modal -->
+                    <div class="modal fade" id="expireModal{{ notice.pk }}" tabindex="-1" aria-labelledby="expireModalLabel{{ notice.pk }}" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="expireModalLabel{{ notice.pk }}">Expire Notice</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            Are you sure you want to expire the notice <strong>{{ notice.title }}</strong>? It will no longer be visible to members.
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-warning expire-confirm-btn" data-id="{{ notice.pk }}">Yes, Expire</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Delete Modal -->
+                    <div class="modal fade" id="deleteModal{{ notice.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ notice.pk }}" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel{{ notice.pk }}">Delete Notice</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            Are you sure you want to delete the notice <strong>{{ notice.title }}</strong>?
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger delete-confirm-btn" data-id="{{ notice.pk }}">Yes, Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">No notices found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Delete Notice
+$(document).on('click', '.delete-confirm-btn', function() {
+    var noticeId = $(this).data('id');
+    var modal = $('#deleteModal' + noticeId);
+    $.ajax({
+        url: '/notices/' + noticeId + '/delete/',
+        type: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+        success: function(data) {
+            if (data.success) {
+                modal.modal('hide');
+                location.reload();
+            }
+        }
+    });
+});
+// Expire Notice
+$(document).on('click', '.expire-confirm-btn', function() {
+    var noticeId = $(this).data('id');
+    var modal = $('#expireModal' + noticeId);
+    $.ajax({
+        url: '/notices/' + noticeId + '/expire/',
+        type: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+        success: function(data) {
+            if (data.success) {
+                modal.modal('hide');
+                location.reload();
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
