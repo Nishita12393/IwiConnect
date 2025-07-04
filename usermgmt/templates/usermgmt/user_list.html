@@ -1,63 +1,67 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>User Management</title>
-</head>
-<body>
-    <h2>User Management</h2>
-    <form method="get" style="margin-bottom: 1em;">
-        <label for="state">Filter by state:</label>
-        <select name="state" id="state" onchange="this.form.submit()">
-            <option value="">All</option>
-            {% for value, label in states %}
-                <option value="{{ value }}" {% if state == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-    </form>
-    <table border="1" cellpadding="5">
-        <thead>
-            <tr>
-                <th>Full Name</th>
-                <th>Email</th>
-                <th>Iwi</th>
-                <th>Hapu</th>
-                <th>State</th>
-                <th>Document</th>
-                <th>Registered At</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td>{{ user.full_name }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.iwi }}</td>
-                <td>{{ user.hapu }}</td>
-                <td>{{ user.state }}</td>
-                <td>
-                    {% if user.citizenship_document %}
-                    <a href="{% url 'view_citizenship_document' user.id %}" target="_blank">View Document</a>
-                    {% else %}-{% endif %}
-                </td>
-                <td>{{ user.registered_at|date:'Y-m-d H:i' }}</td>
-                <td>
-                    {% if user.state == 'PENDING_VERIFICATION' %}
-                    <form method="post" style="display:inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="verify_user_id" value="{{ user.id }}">
-                        <button type="submit">Verify</button>
-                    </form>
-                    <form method="post" style="display:inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="reject_user_id" value="{{ user.id }}">
-                        <button type="submit" style="color:red">Reject</button>
-                    </form>
-                    {% else %}-{% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+{% extends 'core/base.html' %}
+{% block page_title %}User Management - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">User Management</h2>
+  <form method="get" class="row g-3 align-items-end mb-4">
+    <div class="col-auto">
+      <label for="state" class="form-label">Filter by state:</label>
+    </div>
+    <div class="col-auto">
+      <select name="state" id="state" class="form-select" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for value, label in states %}
+          <option value="{{ value }}" {% if state == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Iwi</th>
+          <th>Hapu</th>
+          <th>State</th>
+          <th>Document</th>
+          <th>Registered At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.full_name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.iwi }}</td>
+          <td>{{ user.hapu }}</td>
+          <td>{{ user.state }}</td>
+          <td>
+            {% if user.citizenship_document %}
+              <a href="{% url 'view_citizenship_document' user.id %}" target="_blank" class="btn btn-sm btn-outline-secondary">View Document</a>
+            {% else %}-{% endif %}
+          </td>
+          <td>{{ user.registered_at|date:'Y-m-d H:i' }}</td>
+          <td>
+            {% if user.state == 'PENDING_VERIFICATION' %}
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="verify_user_id" value="{{ user.id }}">
+                <button type="submit" class="btn btn-sm btn-success">Verify</button>
+              </form>
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="reject_user_id" value="{{ user.id }}">
+                <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+              </form>
+            {% else %}-{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
-</body>
-</html> 
+  </div>
+</div>
+{% endblock %} 
