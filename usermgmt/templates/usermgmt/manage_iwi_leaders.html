@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Manage Iwi Leaders - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">Manage Iwi Leaders</h2>
+  <form method="get" class="row g-3 align-items-end mb-4">
+    <div class="col-auto">
+      <label for="iwi" class="form-label">Select Iwi:</label>
+    </div>
+    <div class="col-auto">
+      <select name="iwi" id="iwi" class="form-select" onchange="this.form.submit()">
+        <option value="">-- Select Iwi --</option>
+        {% for iwi in iwis %}
+          <option value="{{ iwi.id }}" {% if selected_iwi and iwi.id == selected_iwi.id %}selected{% endif %}>{{ iwi.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+  {% if selected_iwi %}
+    <h3>Leaders for {{ selected_iwi.name }}</h3>
+    <ul class="list-group mb-3">
+      {% for leader in leaders %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ leader.user.full_name }} ({{ leader.user.email }})</span>
+          <form method="post" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="remove_leader" value="{{ leader.user.id }}">
+            <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+          </form>
+        </li>
+      {% empty %}
+        <li class="list-group-item text-muted">No leaders assigned.</li>
+      {% endfor %}
+    </ul>
+    <h4>Add Leader</h4>
+    <form method="post" class="row g-3 align-items-end">
+      {% csrf_token %}
+      <div class="col-auto">
+        <select name="add_leader" class="form-select">
+          {% for user in users %}
+            <option value="{{ user.id }}">{{ user.full_name }} ({{ user.email }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Add</button>
+      </div>
+    </form>
+  {% endif %}
+</div>
+{% endblock %} 
