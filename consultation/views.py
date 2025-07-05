@@ -44,19 +44,19 @@ def create_proposal(request):
         initial['hapu'] = hapu_id
     # Set allowed consultation types and queryset restrictions
     allowed_types = [('PUBLIC', 'Public'), ('IWI', 'Restricted to Iwi'), ('HAPU', 'Restricted to Hapu')]
-    iwi_qs = Iwi.objects.all()
-    hapu_qs = Hapu.objects.all()
+    iwi_qs = Iwi.objects.filter(is_archived=False)
+    hapu_qs = Hapu.objects.filter(is_archived=False)
     if not is_admin:
         iwi_ids = list(user.iwi_leaderships.values_list('iwi_id', flat=True))
         hapu_ids = list(user.hapu_leaderships.values_list('hapu_id', flat=True))
         if iwi_ids:
             # Iwi leader (may also be hapu leader): can select from their iwi and its hapus
-            iwi_qs = Iwi.objects.filter(id__in=iwi_ids)
-            hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids)
+            iwi_qs = Iwi.objects.filter(id__in=iwi_ids, is_archived=False)
+            hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids, is_archived=False)
             allowed_types = [('IWI', 'Restricted to Iwi'), ('HAPU', 'Restricted to Hapu')]
         elif hapu_ids:
             # Only hapu leader
-            hapu_qs = Hapu.objects.filter(id__in=hapu_ids)
+            hapu_qs = Hapu.objects.filter(id__in=hapu_ids, is_archived=False)
             iwi_qs = Iwi.objects.filter(id__in=hapu_qs.values_list('iwi_id', flat=True))
             allowed_types = [('HAPU', 'Restricted to Hapu')]
     if request.method == 'POST':
@@ -74,10 +74,10 @@ def create_proposal(request):
                 VotingOption.objects.create(proposal=proposal, text=opt)
             form.save_m2m()
             messages.success(request, 'Consultation created successfully!')
-            return redirect('proposal_detail', pk=proposal.pk)
+            return redirect('consultation:proposal_detail', pk=proposal.pk)
         else:
             messages.error(request, 'Please correct the errors below and try again.')
-            return redirect('create_proposal')
+            return redirect('consultation:create_proposal')
     else:
         form = ProposalForm(initial=initial)
         form.fields['iwi'].queryset = iwi_qs
@@ -86,14 +86,14 @@ def create_proposal(request):
         # Restrict Iwi/Hapu choices for leaders
         if iwi_id:
             form.fields['iwi'].queryset = Iwi.objects.filter(id=iwi_id)
-            form.fields['hapu'].queryset = Hapu.objects.filter(iwi_id=iwi_id)
+            form.fields['hapu'].queryset = Hapu.objects.filter(iwi_id=iwi_id, is_archived=False)
         if hapu_id:
-            hapu = Hapu.objects.filter(id=hapu_id).first()
+            hapu = Hapu.objects.filter(id=hapu_id, is_archived=False).first()
             if hapu:
                 form.fields['iwi'].initial = hapu.iwi.id
                 form.fields['iwi'].queryset = Iwi.objects.filter(id=hapu.iwi.id)
                 form.fields['iwi'].disabled = True
-            form.fields['hapu'].queryset = Hapu.objects.filter(id=hapu_id)
+            form.fields['hapu'].queryset = Hapu.objects.filter(id=hapu_id, is_archived=False)
     return render(request, 'consultation/create_proposal.html', {'form': form})
 
 @user_passes_test(is_leader)
@@ -214,7 +214,7 @@ def member_consultation_detail(request, pk):
                 )
                 comment_added = True
         # Redirect after POST to prevent form resubmission
-        return redirect('member_consultation_detail', pk=proposal.pk)
+        return redirect('consultation:member_consultation_detail', pk=proposal.pk)
     comments = proposal.comments.all() if proposal.enable_comments else []
     return render(request, 'consultation/member_consultation_detail.html', {
         'proposal': proposal,
@@ -252,7 +252,7 @@ def consultation_result(request, pk):
             return HttpResponseForbidden('You do not have permission to access this consultation.')
     now = timezone.now()
     if proposal.end_date > now:
-        return redirect('member_consultation_detail', pk=pk)
+        return redirect('consultation:member_consultation_detail', pk=pk)
     # Calculate vote counts and percentages
     options = proposal.voting_options.all()
     total_votes = proposal.votes.count()
@@ -281,5 +281,5 @@ def moderate_comments(request, pk):
             if f'reject_{comment.id}' in request.POST:
                 comment.is_approved = False
                 comment.save()
-        return redirect('moderate_comments', pk=pk)
+        return redirect('consultation:moderate_comments', pk=pk)
     return render(request, 'consultation/moderate_comments.html', {'proposal': proposal, 'comments': comments})

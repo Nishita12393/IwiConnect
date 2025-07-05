@@ -24,7 +24,7 @@
                     <td><span class="badge bg-primary">{{ proposal.get_consultation_type_display }}</span></td>
                     <td>{{ proposal.created_by.full_name }}</td>
                     <td>{{ proposal.created_at|date:'Y-m-d H:i' }}</td>
-                    <td><a href="{% url 'proposal_detail' proposal.pk %}" class="btn btn-sm btn-outline-primary">View</a></td>
+                    <td><a href="{% url 'consultation:proposal_detail' proposal.pk %}" class="btn btn-sm btn-outline-primary">View</a></td>
                 </tr>
                 {% empty %}
                 <tr>

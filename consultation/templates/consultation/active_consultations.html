@@ -14,7 +14,7 @@
                             <p class="mb-2"><span class="badge bg-primary">{{ proposal.get_consultation_type_display }}</span></p>
                             <p class="mb-1"><strong>Start:</strong> {{ proposal.start_date|date:'Y-m-d H:i' }}</p>
                             <p class="mb-1"><strong>End:</strong> {{ proposal.end_date|date:'Y-m-d H:i' }}</p>
-                            <a href="{% url 'member_consultation_detail' proposal.pk %}" class="btn btn-outline-primary btn-sm mt-2">View & Vote</a>
+                            <a href="{% url 'consultation:member_consultation_detail' proposal.pk %}" class="btn btn-outline-primary btn-sm mt-2">View & Vote</a>
                         </div>
                     </div>
                 </div>
@@ -53,8 +53,8 @@
                             <p class="mb-2"><span class="badge bg-secondary">{{ proposal.get_consultation_type_display }}</span></p>
                             <p class="mb-1"><strong>Start:</strong> {{ proposal.start_date|date:'Y-m-d H:i' }}</p>
                             <p class="mb-1"><strong>End:</strong> {{ proposal.end_date|date:'Y-m-d H:i' }}</p>
-                            <a href="{% url 'member_consultation_detail' proposal.pk %}" class="btn btn-outline-secondary btn-sm mt-2">View</a>
-                            <a href="{% url 'consultation_result' proposal.pk %}" class="btn btn-success btn-sm mt-2 ms-1">Results</a>
+                            <a href="{% url 'consultation:member_consultation_detail' proposal.pk %}" class="btn btn-outline-secondary btn-sm mt-2">View</a>
+                            <a href="{% url 'consultation:consultation_result' proposal.pk %}" class="btn btn-success btn-sm mt-2 ms-1">Results</a>
                         </div>
                     </div>
                 </div>

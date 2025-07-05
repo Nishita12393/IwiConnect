@@ -1,6 +1,8 @@
 from django.urls import path
 from .views import create_proposal, proposal_list, proposal_detail, active_consultations, member_consultation_detail, consultation_result, moderate_comments
 
+app_name = 'consultation'
+
 urlpatterns = [
     path('', create_proposal, name='create_proposal'),
     path('list/', proposal_list, name='proposal_list'),
