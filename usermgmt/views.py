@@ -145,3 +145,73 @@ def manage_hapu_leaders(request):
         'selected_hapu': selected_hapu,
         'leaders': leaders,
     })
+
+@login_required
+def hapu_user_approval(request):
+    """Allow hapu leaders to approve/reject users of their hapu"""
+    # Check if user is a hapu leader
+    hapu_leaderships = HapuLeader.objects.filter(user=request.user)
+    if not hapu_leaderships.exists():
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('dashboard')
+    
+    # Get the hapus this user leads
+    user_hapus = [hl.hapu for hl in hapu_leaderships]
+    
+    # Get selected hapu (default to first hapu if none selected)
+    selected_hapu_id = request.GET.get('hapu')
+    if selected_hapu_id:
+        selected_hapu = get_object_or_404(Hapu, id=selected_hapu_id, leaders__user=request.user)
+    else:
+        selected_hapu = user_hapus[0] if user_hapus else None
+    
+    if not selected_hapu:
+        messages.error(request, 'No hapu found for your leadership.')
+        return redirect('dashboard')
+    
+    # Get pending users for the selected hapu
+    pending_users = CustomUser.objects.filter(
+        hapu=selected_hapu,
+        state='PENDING_VERIFICATION'
+    ).order_by('-registered_at')
+    
+    # Pagination
+    paginator = Paginator(pending_users, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    if request.method == 'POST':
+        user_id = request.POST.get('verify_user_id')
+        reject_id = request.POST.get('reject_user_id')
+        
+        if user_id:
+            user_to_verify = get_object_or_404(CustomUser, id=user_id, hapu=selected_hapu)
+            user_to_verify.state = 'VERIFIED'
+            user_to_verify.save()
+            # Send approval email in background thread with error logging
+            threading.Thread(
+                target=send_email_with_logging, 
+                args=(send_account_approved_email, user_to_verify, 'approval'), 
+                daemon=True
+            ).start()
+            messages.success(request, f'User {user_to_verify.full_name} has been verified successfully.')
+            
+        elif reject_id:
+            user_to_reject = get_object_or_404(CustomUser, id=reject_id, hapu=selected_hapu)
+            user_to_reject.state = 'REJECTED'
+            user_to_reject.save()
+            # Send rejection email in background thread with error logging
+            threading.Thread(
+                target=send_email_with_logging, 
+                args=(send_account_rejected_email, user_to_reject, 'rejection'), 
+                daemon=True
+            ).start()
+            messages.success(request, f'User {user_to_reject.full_name} has been rejected successfully.')
+        
+        return redirect(f"{reverse('usermgmt:hapu_user_approval')}?hapu={selected_hapu.id}")
+    
+    return render(request, 'usermgmt/hapu_user_approval.html', {
+        'page_obj': page_obj,
+        'selected_hapu': selected_hapu,
+        'user_hapus': user_hapus,
+    })

@@ -1,0 +1,137 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Hapu User Approval - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Hapu User Approval</h2>
+            
+            <!-- Hapu Selection -->
+            {% if user_hapus|length > 1 %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Select Hapu</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for hapu in user_hapus %}
+                        <div class="col-md-4 mb-2">
+                            <a href="{% url 'usermgmt:hapu_user_approval' %}?hapu={{ hapu.id }}" 
+                               class="btn btn-outline-primary {% if hapu.id == selected_hapu.id %}active{% endif %} w-100">
+                                {{ hapu.name }} ({{ hapu.iwi.name }})
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Current Hapu Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        Pending Users - {{ selected_hapu.name }} ({{ selected_hapu.iwi.name }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Registered</th>
+                                        <th>Citizenship Document</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in page_obj %}
+                                    <tr>
+                                        <td>{{ user.full_name }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>{{ user.registered_at|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            {% if user.citizenship_document %}
+                                                <a href="{% url 'usermgmt:view_citizenship_document' user.id %}" 
+                                                   target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                    View Document
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">No document</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" name="verify_user_id" value="{{ user.id }}" 
+                                                        class="btn btn-sm btn-success me-1">
+                                                    Approve
+                                                </button>
+                                                <button type="submit" name="reject_user_id" value="{{ user.id }}" 
+                                                        class="btn btn-sm btn-danger">
+                                                    Reject
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="User pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?hapu={{ selected_hapu.id }}&page={{ page_obj.previous_page_number }}">&laquo; Previous</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&laquo; Previous</span>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?hapu={{ selected_hapu.id }}&page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?hapu={{ selected_hapu.id }}&page={{ page_obj.next_page_number }}">Next &raquo;</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next &raquo;</span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                        
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No pending users</h5>
+                            <p class="text-muted">There are no users waiting for approval in {{ selected_hapu.name }}.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

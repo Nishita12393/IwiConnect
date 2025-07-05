@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import user_list, view_citizenship_document, manage_iwi_leaders, manage_hapu_leaders
+from .views import user_list, view_citizenship_document, manage_iwi_leaders, manage_hapu_leaders, hapu_user_approval
 
 app_name = 'usermgmt'
 
@@ -8,4 +8,5 @@ urlpatterns = [
     path('view_document/<int:user_id>/', view_citizenship_document, name='view_citizenship_document'),
     path('manage-iwi-leaders/', manage_iwi_leaders, name='manage_iwi_leaders'),
     path('manage-hapu-leaders/', manage_hapu_leaders, name='manage_hapu_leaders'),
+    path('hapu-user-approval/', hapu_user_approval, name='hapu_user_approval'),
 ] 
