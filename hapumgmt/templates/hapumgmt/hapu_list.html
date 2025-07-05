@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Hapus</h2>
+    <a href="{% url 'hapumgmt:hapu_create' %}" class="btn btn-primary mb-3">Create New Hapu</a>
+    <h4>Active Hapus</h4>
+    {% if active_hapus %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Iwi</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hapu in active_hapus %}
+                <tr>
+                    <td><a href="{% url 'hapumgmt:hapu_detail' hapu.pk %}">{{ hapu.name }}</a></td>
+                    <td>{{ hapu.iwi.name }}</td>
+                    <td>{{ hapu.description|default:'-' }}</td>
+                    <td>
+                        <a href="{% url 'hapumgmt:hapu_edit' hapu.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <a href="{% url 'hapumgmt:hapu_archive' hapu.pk %}" class="btn btn-sm btn-outline-danger ms-1">Archive</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No active hapus found.</p>
+    {% endif %}
+    <h4 class="mt-4">Archived Hapus</h4>
+    {% if archived_hapus %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Iwi</th>
+                    <th>Description</th>
+                    <th>Archived At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hapu in archived_hapus %}
+                <tr>
+                    <td><a href="{% url 'hapumgmt:hapu_detail' hapu.pk %}">{{ hapu.name }}</a></td>
+                    <td>{{ hapu.iwi.name }}</td>
+                    <td>{{ hapu.description|default:'-' }}</td>
+                    <td>{{ hapu.archived_at|date:'Y-m-d H:i' }}</td>
+                    <td>
+                        <a href="{% url 'hapumgmt:hapu_unarchive' hapu.pk %}" class="btn btn-sm btn-outline-success">Unarchive</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No archived hapus found.</p>
+    {% endif %}
+</div>
+{% endblock %} 

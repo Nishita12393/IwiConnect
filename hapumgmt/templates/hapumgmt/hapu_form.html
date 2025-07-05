@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% if form.iwi_field_visible %}
+            <div class="mb-3">
+                {{ form.iwi.label_tag }}
+                {{ form.iwi }}
+                {% if form.iwi.help_text %}<div class="form-text">{{ form.iwi.help_text }}</div>{% endif %}
+                {% for error in form.iwi.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% for field in form %}
+            {% if field.name != 'iwi' %}
+            <div class="mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                {% for error in field.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
+        <a href="{% url 'hapumgmt:hapu_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+{% endblock %} 

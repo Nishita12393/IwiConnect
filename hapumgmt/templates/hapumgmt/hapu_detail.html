@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Hapu Details</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title">{{ hapu.name }}</h5>
+                    <p class="card-text"><strong>Iwi:</strong> {{ hapu.iwi.name }}</p>
+                    <p class="card-text"><strong>Description:</strong> {{ hapu.description|default:'No description provided' }}</p>
+                    <p class="card-text">
+                        <strong>Status:</strong> 
+                        {% if hapu.is_archived %}
+                            <span class="badge bg-danger">Archived</span>
+                        {% else %}
+                            <span class="badge bg-success">Active</span>
+                        {% endif %}
+                    </p>
+                    
+                    {% if hapu.is_archived %}
+                        <p class="card-text"><strong>Archived At:</strong> {{ hapu.archived_at|date:'F j, Y \a\t g:i A' }}</p>
+                        {% if hapu.archived_by %}
+                            <p class="card-text"><strong>Archived By:</strong> {{ hapu.archived_by.full_name }}</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        {% if not hapu.is_archived %}
+            <a href="{% url 'hapumgmt:hapu_edit' hapu.pk %}" class="btn btn-primary">Edit Hapu</a>
+            <a href="{% url 'hapumgmt:hapu_archive' hapu.pk %}" class="btn btn-warning">Archive Hapu</a>
+        {% else %}
+            <a href="{% url 'hapumgmt:hapu_unarchive' hapu.pk %}" class="btn btn-success">Unarchive Hapu</a>
+        {% endif %}
+        <a href="{% url 'hapumgmt:hapu_list' %}" class="btn btn-secondary">Back to List</a>
+    </div>
+</div>
+{% endblock %} 
