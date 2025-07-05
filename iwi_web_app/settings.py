@@ -147,11 +147,16 @@ LOGIN_URL = '/login'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = '9f9a0108cc9598'
-EMAIL_HOST_PASSWORD = '9e6d93b19c187b'
-EMAIL_USE_TLS = True
-EMAIL_SSL_CONTEXT = ssl._create_unverified_context()
-DEFAULT_FROM_EMAIL = 'IwiConnect <noreply@iwiconnect.local>'
+EMAIL_HOST = Config.get_email_host()
+EMAIL_PORT = int(Config.get_email_port())
+EMAIL_HOST_USER = Config.get_email_user()
+EMAIL_HOST_PASSWORD = Config.get_email_password()
+EMAIL_USE_TLS = Config.get_email_use_tls()
+EMAIL_USE_SSL = Config.get_email_use_ssl()
+DEFAULT_FROM_EMAIL = Config.get_from_email()
+
+# SSL Context for email (only if using TLS)
+if EMAIL_USE_TLS:
+    EMAIL_SSL_CONTEXT = ssl._create_unverified_context()

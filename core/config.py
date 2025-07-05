@@ -35,4 +35,28 @@ class Config:
 
     @staticmethod
     def get_db_port():
-        return os.getenv('DB_PORT', '3306') 
+        return os.getenv('DB_PORT', '3306')
+
+    @staticmethod
+    def get_email_host():
+        return os.getenv('EMAIL_HOST', 'sandbox.smtp.mailtrap.io')
+
+    @staticmethod
+    def get_email_port():
+        return os.getenv('EMAIL_PORT', '587')
+
+    @staticmethod
+    def get_email_user():
+        return os.getenv('EMAIL_HOST_USER', '')
+
+    @staticmethod
+    def get_email_password():
+        return os.getenv('EMAIL_HOST_PASSWORD', '')
+
+    @staticmethod
+    def get_email_use_tls():
+        return os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+
+    @staticmethod
+    def get_email_use_ssl():
+        return os.getenv('EMAIL_USE_SSL', 'False').lower() == 'true' 
