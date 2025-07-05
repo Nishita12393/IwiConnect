@@ -33,10 +33,12 @@ urlpatterns = [
     path('api/get_hapus/', get_hapus, name='get_hapus'),
     path('api/get_hapus_htmx/', get_hapus_htmx, name='get_hapus_htmx'),
     path('usermgmt/', include('usermgmt.urls')),
+    path('iwimgmt/', include('iwimgmt.urls')),
     path('dashboard/', dashboard, name='dashboard'),
     path('notices/', include('notice.urls')),
     path('events/', include('events.urls')),
     path('profile/', profile, name='profile'),
+    path('hapumgmt/', include('hapumgmt.urls')),
 ]
 
 if settings.DEBUG:

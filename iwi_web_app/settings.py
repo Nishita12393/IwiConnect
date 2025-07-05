@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'consultation',
     'notice',
     'events',
+    'iwimgmt',
+    'hapumgmt',
 ]
 
 MIDDLEWARE = [
