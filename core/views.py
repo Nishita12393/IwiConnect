@@ -17,8 +17,29 @@ from django.conf import settings
 import threading
 import secrets
 import hashlib
+import logging
 from datetime import datetime, timedelta
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
+
+def send_email_with_logging(email_function, *args, email_type):
+    """Send email with error logging"""
+    try:
+        email_function(*args)
+        # Extract user from args for logging
+        user = args[0] if args else None
+        if user and hasattr(user, 'email') and hasattr(user, 'id'):
+            logger.info(f"Successfully sent {email_type} email to user {user.email} (ID: {user.id})")
+        else:
+            logger.info(f"Successfully sent {email_type} email")
+    except Exception as e:
+        # Extract user from args for logging
+        user = args[0] if args else None
+        if user and hasattr(user, 'email') and hasattr(user, 'id'):
+            logger.error(f"Failed to send {email_type} email to user {user.email} (ID: {user.id}): {str(e)}")
+        else:
+            logger.error(f"Failed to send {email_type} email: {str(e)}")
 
 def register(request):
     if request.user.is_authenticated:
@@ -30,8 +51,12 @@ def register(request):
             user.state = 'PENDING_VERIFICATION'
             user.set_password(form.cleaned_data['password'])
             user.save()
-            # Send welcome email in a background thread
-            threading.Thread(target=send_welcome_email, args=(user,), daemon=True).start()
+            # Send welcome email in a background thread with error logging
+            threading.Thread(
+                target=send_email_with_logging, 
+                args=(send_welcome_email, user, 'welcome'), 
+                daemon=True
+            ).start()
             messages.success(request, 'Thank you for registering. Your account is pending admin verification.')
             return redirect('register')
         else:
@@ -172,133 +197,150 @@ def profile(request):
     })
 
 def send_welcome_email(user):
-    from django.template.loader import render_to_string
-    from django.conf import settings
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-    from core.helpers import get_logo_url, get_from_email, get_app_name
-    subject = 'Welcome to IwiConnect'
-    plain_message = (
-        'Kia ora {},\n\n'
-        'Thank you for registering with IwiConnect! Your account is pending admin verification.\n\n'
-        'Naku noa,\nIwiConnect Team'
-    ).format(user.full_name)
-    html_message = render_to_string('email/welcome_email.html', {
-        'name': user.full_name,
-        'logo_url': get_logo_url(),
-    })
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
-    msg['To'] = user.email
-    part1 = MIMEText(plain_message, 'plain')
-    part2 = MIMEText(html_message, 'html')
-    msg.attach(part1)
-    msg.attach(part2)
-    smtp_host = settings.EMAIL_HOST
-    smtp_port = settings.EMAIL_PORT
-    smtp_user = settings.EMAIL_HOST_USER
-    smtp_password = settings.EMAIL_HOST_PASSWORD
-    use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
-    ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.ehlo()
-        if use_tls:
-            server.starttls(context=ssl_context)
-        server.login(smtp_user, smtp_password)
-        server.sendmail(msg['From'], [msg['To']], msg.as_string())
+    """Send welcome email to new user"""
+    try:
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from core.helpers import get_logo_url, get_from_email, get_app_name
+        
+        subject = 'Welcome to IwiConnect'
+        plain_message = (
+            'Kia ora {},\n\n'
+            'Thank you for registering with IwiConnect! Your account is pending admin verification.\n\n'
+            'Naku noa,\nIwiConnect Team'
+        ).format(user.full_name)
+        html_message = render_to_string('email/welcome_email.html', {
+            'name': user.full_name,
+            'logo_url': get_logo_url(),
+        })
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
+        msg['To'] = user.email
+        part1 = MIMEText(plain_message, 'plain')
+        part2 = MIMEText(html_message, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        smtp_host = settings.EMAIL_HOST
+        smtp_port = settings.EMAIL_PORT
+        smtp_user = settings.EMAIL_HOST_USER
+        smtp_password = settings.EMAIL_HOST_PASSWORD
+        use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
+        ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.ehlo()
+            if use_tls:
+                server.starttls(context=ssl_context)
+            server.login(smtp_user, smtp_password)
+            server.sendmail(msg['From'], [msg['To']], msg.as_string())
+        logger.info(f"Successfully sent welcome email to user {user.email} (ID: {user.id})")
+    except Exception as e:
+        logger.error(f"Failed to send welcome email to user {user.email} (ID: {user.id}): {str(e)}")
+        raise
 
 def send_account_approved_email(user):
     """Send email notification when user account is approved"""
-    from django.template.loader import render_to_string
-    from django.conf import settings
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-    from core.helpers import get_logo_url, get_from_email, get_app_name
-    
-    subject = 'Account Approved - IwiConnect'
-    plain_message = (
-        'Kia ora {},\n\n'
-        'Great news! Your IwiConnect account has been approved.\n\n'
-        'You can now log in to your account and start using all the features of IwiConnect.\n\n'
-        'Naku noa,\nIwiConnect Team'
-    ).format(user.full_name)
-    
-    html_message = render_to_string('email/account_approved.html', {
-        'name': user.full_name,
-        'logo_url': get_logo_url(),
-    })
-    
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
-    msg['To'] = user.email
-    part1 = MIMEText(plain_message, 'plain')
-    part2 = MIMEText(html_message, 'html')
-    msg.attach(part1)
-    msg.attach(part2)
-    
-    smtp_host = settings.EMAIL_HOST
-    smtp_port = settings.EMAIL_PORT
-    smtp_user = settings.EMAIL_HOST_USER
-    smtp_password = settings.EMAIL_HOST_PASSWORD
-    use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
-    ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
-    
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.ehlo()
-        if use_tls:
-            server.starttls(context=ssl_context)
-        server.login(smtp_user, smtp_password)
-        server.sendmail(msg['From'], [msg['To']], msg.as_string())
+    try:
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from core.helpers import get_logo_url, get_from_email, get_app_name
+        
+        subject = 'Account Approved - IwiConnect'
+        plain_message = (
+            'Kia ora {},\n\n'
+            'Great news! Your IwiConnect account has been approved.\n\n'
+            'You can now log in to your account and start using all the features of IwiConnect.\n\n'
+            'Naku noa,\nIwiConnect Team'
+        ).format(user.full_name)
+        
+        html_message = render_to_string('email/account_approved.html', {
+            'name': user.full_name,
+            'logo_url': get_logo_url(),
+        })
+        
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
+        msg['To'] = user.email
+        part1 = MIMEText(plain_message, 'plain')
+        part2 = MIMEText(html_message, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        smtp_host = settings.EMAIL_HOST
+        smtp_port = settings.EMAIL_PORT
+        smtp_user = settings.EMAIL_HOST_USER
+        smtp_password = settings.EMAIL_HOST_PASSWORD
+        use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
+        ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
+        
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.ehlo()
+            if use_tls:
+                server.starttls(context=ssl_context)
+            server.login(smtp_user, smtp_password)
+            server.sendmail(msg['From'], [msg['To']], msg.as_string())
+        logger.info(f"Successfully sent account approval email to user {user.email} (ID: {user.id})")
+    except Exception as e:
+        logger.error(f"Failed to send account approval email to user {user.email} (ID: {user.id}): {str(e)}")
+        raise
 
 def send_account_rejected_email(user):
     """Send email notification when user account is rejected"""
-    from django.template.loader import render_to_string
-    from django.conf import settings
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-    from core.helpers import get_logo_url, get_from_email, get_app_name
-    
-    subject = 'Account Application Status - IwiConnect'
-    plain_message = (
-        'Kia ora {},\n\n'
-        'We regret to inform you that your IwiConnect account application has been rejected.\n\n'
-        'This may be due to incomplete information or issues with the provided documentation. '
-        'If you believe this is an error, please contact us for further assistance.\n\n'
-        'Naku noa,\nIwiConnect Team'
-    ).format(user.full_name)
-    
-    html_message = render_to_string('email/account_rejected.html', {
-        'name': user.full_name,
-        'logo_url': get_logo_url(),
-    })
-    
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
-    msg['To'] = user.email
-    part1 = MIMEText(plain_message, 'plain')
-    part2 = MIMEText(html_message, 'html')
-    msg.attach(part1)
-    msg.attach(part2)
-    
-    smtp_host = settings.EMAIL_HOST
-    smtp_port = settings.EMAIL_PORT
-    smtp_user = settings.EMAIL_HOST_USER
-    smtp_password = settings.EMAIL_HOST_PASSWORD
-    use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
-    ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
-    
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.ehlo()
-        if use_tls:
-            server.starttls(context=ssl_context)
-        server.login(smtp_user, smtp_password)
-        server.sendmail(msg['From'], [msg['To']], msg.as_string())
+    try:
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from core.helpers import get_logo_url, get_from_email, get_app_name
+        
+        subject = 'Account Application Status - IwiConnect'
+        plain_message = (
+            'Kia ora {},\n\n'
+            'We regret to inform you that your IwiConnect account application has been rejected.\n\n'
+            'This may be due to incomplete information or issues with the provided documentation. '
+            'If you believe this is an error, please contact us for further assistance.\n\n'
+            'Naku noa,\nIwiConnect Team'
+        ).format(user.full_name)
+        
+        html_message = render_to_string('email/account_rejected.html', {
+            'name': user.full_name,
+            'logo_url': get_logo_url(),
+        })
+        
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
+        msg['To'] = user.email
+        part1 = MIMEText(plain_message, 'plain')
+        part2 = MIMEText(html_message, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        smtp_host = settings.EMAIL_HOST
+        smtp_port = settings.EMAIL_PORT
+        smtp_user = settings.EMAIL_HOST_USER
+        smtp_password = settings.EMAIL_HOST_PASSWORD
+        use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
+        ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
+        
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.ehlo()
+            if use_tls:
+                server.starttls(context=ssl_context)
+            server.login(smtp_user, smtp_password)
+            server.sendmail(msg['From'], [msg['To']], msg.as_string())
+        logger.info(f"Successfully sent account rejection email to user {user.email} (ID: {user.id})")
+    except Exception as e:
+        logger.error(f"Failed to send account rejection email to user {user.email} (ID: {user.id}): {str(e)}")
+        raise
 
 def generate_reset_token():
     """Generate a secure random token for password reset"""
@@ -306,59 +348,64 @@ def generate_reset_token():
 
 def send_password_reset_email(user, reset_token, request=None):
     """Send password reset email to user"""
-    from django.template.loader import render_to_string
-    from django.conf import settings
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-    from core.helpers import get_logo_url, get_from_email, get_app_name
-    
-    subject = 'Password Reset Request - IwiConnect'
-    
-    # Build reset URL - if request is not available, use a placeholder
-    if request:
-        reset_url = f"{request.build_absolute_uri('/')[:-1]}/reset-password/{reset_token}/"
-    else:
-        # Fallback for background thread
-        reset_url = f"http://localhost:8000/reset-password/{reset_token}/"
-    
-    plain_message = (
-        'Kia ora {},\n\n'
-        'You requested a password reset for your IwiConnect account.\n\n'
-        'Click the following link to reset your password:\n{}\n\n'
-        'This link will expire in 24 hours.\n\n'
-        'If you did not request this reset, please ignore this email.\n\n'
-        'Naku noa,\nIwiConnect Team'
-    ).format(user.full_name, reset_url)
-    
-    html_message = render_to_string('email/password_reset_email.html', {
-        'name': user.full_name,
-        'reset_url': reset_url,
-        'logo_url': get_logo_url(),
-    })
-    
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
-    msg['To'] = user.email
-    part1 = MIMEText(plain_message, 'plain')
-    part2 = MIMEText(html_message, 'html')
-    msg.attach(part1)
-    msg.attach(part2)
-    
-    smtp_host = settings.EMAIL_HOST
-    smtp_port = settings.EMAIL_PORT
-    smtp_user = settings.EMAIL_HOST_USER
-    smtp_password = settings.EMAIL_HOST_PASSWORD
-    use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
-    ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
-    
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.ehlo()
-        if use_tls:
-            server.starttls(context=ssl_context)
-        server.login(smtp_user, smtp_password)
-        server.sendmail(msg['From'], [msg['To']], msg.as_string())
+    try:
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from core.helpers import get_logo_url, get_from_email, get_app_name
+        
+        subject = 'Password Reset Request - IwiConnect'
+        
+        # Build reset URL - if request is not available, use a placeholder
+        if request:
+            reset_url = f"{request.build_absolute_uri('/')[:-1]}/reset-password/{reset_token}/"
+        else:
+            # Fallback for background thread
+            reset_url = f"http://localhost:8000/reset-password/{reset_token}/"
+        
+        plain_message = (
+            'Kia ora {},\n\n'
+            'You requested a password reset for your IwiConnect account.\n\n'
+            'Click the following link to reset your password:\n{}\n\n'
+            'This link will expire in 24 hours.\n\n'
+            'If you did not request this reset, please ignore this email.\n\n'
+            'Naku noa,\nIwiConnect Team'
+        ).format(user.full_name, reset_url)
+        
+        html_message = render_to_string('email/password_reset_email.html', {
+            'name': user.full_name,
+            'reset_url': reset_url,
+            'logo_url': get_logo_url(),
+        })
+        
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
+        msg['To'] = user.email
+        part1 = MIMEText(plain_message, 'plain')
+        part2 = MIMEText(html_message, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        smtp_host = settings.EMAIL_HOST
+        smtp_port = settings.EMAIL_PORT
+        smtp_user = settings.EMAIL_HOST_USER
+        smtp_password = settings.EMAIL_HOST_PASSWORD
+        use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
+        ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
+        
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.ehlo()
+            if use_tls:
+                server.starttls(context=ssl_context)
+            server.login(smtp_user, smtp_password)
+            server.sendmail(msg['From'], [msg['To']], msg.as_string())
+        logger.info(f"Successfully sent password reset email to user {user.email} (ID: {user.id})")
+    except Exception as e:
+        logger.error(f"Failed to send password reset email to user {user.email} (ID: {user.id}): {str(e)}")
+        raise
 
 def password_reset_request(request):
     """Handle password reset request"""
@@ -378,8 +425,12 @@ def password_reset_request(request):
                 request.session['reset_email'] = email
                 request.session['reset_expires'] = (timezone.now() + timedelta(hours=24)).isoformat()
                 
-                # Send email in background thread
-                threading.Thread(target=send_password_reset_email, args=(user, reset_token, request), daemon=True).start()
+                # Send email in background thread with error logging
+                threading.Thread(
+                    target=send_email_with_logging, 
+                    args=(send_password_reset_email, user, reset_token, request, 'password_reset'), 
+                    daemon=True
+                ).start()
                 
                 messages.success(request, 'Password reset instructions have been sent to your email address.')
                 return redirect('login')
