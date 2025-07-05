@@ -16,6 +16,12 @@ class ProposalForm(forms.ModelForm):
         min_length=5,
         max_length=500,
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter out archived iwis and hapus
+        self.fields['iwi'].queryset = Iwi.objects.filter(is_archived=False).order_by('name')
+        self.fields['hapu'].queryset = Hapu.objects.filter(is_archived=False).order_by('name')
     class Meta:
         model = Proposal
         fields = [
@@ -82,4 +88,15 @@ class ProposalForm(forms.ModelForm):
         if start and end:
             if end <= start:
                 self.add_error('end_date', 'End date must be after start date.')
+        
+        # Validate that selected iwi and hapu are not archived
+        iwi = cleaned_data.get('iwi')
+        hapu = cleaned_data.get('hapu')
+        
+        if iwi and iwi.is_archived:
+            self.add_error('iwi', 'Cannot create consultations for archived iwis.')
+        
+        if hapu and hapu.is_archived:
+            self.add_error('hapu', 'Cannot create consultations for archived hapus.')
+        
         return cleaned_data 
