@@ -53,19 +53,19 @@ def create_notice(request):
     is_admin = user.is_staff
     allowed_audience = [('ALL', 'All Users'), ('IWI', 'Specific Iwi'), ('HAPU', 'Specific Hapu')]
     iwi_qs = Iwi.objects.filter(is_archived=False)
-    hapu_qs = Hapu.objects.all()
+    hapu_qs = Hapu.objects.filter(is_archived=False)
     if not is_admin:
         iwi_ids = list(user.iwi_leaderships.values_list('iwi_id', flat=True))
         hapu_ids = list(user.hapu_leaderships.values_list('hapu_id', flat=True))
         if iwi_ids:
             # Iwi leader (may also be hapu leader): can select from their iwi and its hapus
             iwi_qs = Iwi.objects.filter(id__in=iwi_ids, is_archived=False)
-            hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids)
+            hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids, is_archived=False)
             allowed_audience = [('IWI', 'Specific Iwi'), ('HAPU', 'Specific Hapu')]
         elif hapu_ids:
             # Only hapu leader
-            hapu_qs = Hapu.objects.filter(id__in=hapu_ids)
-            iwi_qs = Iwi.objects.filter(id__in=hapu_qs.values_list('iwi_id', flat=True))
+            hapu_qs = Hapu.objects.filter(id__in=hapu_ids, is_archived=False)
+            iwi_qs = Iwi.objects.filter(id__in=hapu_qs.values_list('iwi_id', flat=True), is_archived=False)
             allowed_audience = [('HAPU', 'Specific Hapu')]
     if request.method == 'POST':
         form = NoticeForm(request.POST, request.FILES)
@@ -100,17 +100,17 @@ def edit_notice(request, pk):
     is_admin = user.is_staff
     allowed_audience = [('ALL', 'All Users'), ('IWI', 'Specific Iwi'), ('HAPU', 'Specific Hapu')]
     iwi_qs = Iwi.objects.filter(is_archived=False)
-    hapu_qs = Hapu.objects.all()
+    hapu_qs = Hapu.objects.filter(is_archived=False)
     if not is_admin:
         iwi_ids = list(user.iwi_leaderships.values_list('iwi_id', flat=True))
         hapu_ids = list(user.hapu_leaderships.values_list('hapu_id', flat=True))
         if iwi_ids:
             iwi_qs = Iwi.objects.filter(id__in=iwi_ids, is_archived=False)
-            hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids)
+            hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids, is_archived=False)
             allowed_audience = [('IWI', 'Specific Iwi'), ('HAPU', 'Specific Hapu')]
         elif hapu_ids:
-            hapu_qs = Hapu.objects.filter(id__in=hapu_ids)
-            iwi_qs = Iwi.objects.filter(id__in=hapu_qs.values_list('iwi_id', flat=True))
+            hapu_qs = Hapu.objects.filter(id__in=hapu_ids, is_archived=False)
+            iwi_qs = Iwi.objects.filter(id__in=hapu_qs.values_list('iwi_id', flat=True), is_archived=False)
             allowed_audience = [('HAPU', 'Specific Hapu')]
     if request.method == 'POST':
         form = NoticeForm(request.POST, request.FILES, instance=notice)

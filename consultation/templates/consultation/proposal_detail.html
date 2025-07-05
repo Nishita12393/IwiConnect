@@ -59,8 +59,11 @@
                 </div>
             </div>
             <div class="mt-3">
-                        <a href="{% url 'consultation:proposal_list' %}" class="btn btn-secondary">&larr; Back to List</a>
-        <a href="{% url 'consultation:active_consultations' %}" class="btn btn-primary">View Active Consultations</a>
+                <a href="{% url 'consultation:proposal_list' %}" class="btn btn-secondary">&larr; Back to List</a>
+                <a href="{% url 'consultation:active_consultations' %}" class="btn btn-primary">View Active Consultations</a>
+                {% if user.is_staff or user.iwi_leaderships.all or user.hapu_leaderships.all %}
+                    <a href="{% url 'consultation:moderate_comments' proposal.pk %}" class="btn btn-warning">Moderate Comments</a>
+                {% endif %}
             </div>
         </div>
     </div>

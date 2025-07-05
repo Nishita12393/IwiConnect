@@ -9,6 +9,9 @@
       <a href="{% url 'usermgmt:manage_hapu_leaders' %}" class="btn btn-primary ms-2">Manage Hapu Leaders</a>
       <a href="{% url 'hapumgmt:hapu_list' %}" class="btn btn-success ms-2">Manage Hapus</a>
     {% endif %}
+    {% if user.hapu_leaderships.all %}
+      <a href="{% url 'usermgmt:hapu_user_approval' %}" class="btn btn-warning ms-2">Approve Hapu Users</a>
+    {% endif %}
   </div>
 
   <div class="row">
@@ -22,7 +25,11 @@
                 <div class="card-body">
                   <h5 class="card-title text-primary">{{ leadership.iwi.name }}</h5>
                   <p class="card-text mb-2">Iwi Leader</p>
-                  <a href="{% url 'consultation:create_proposal' %}?iwi={{ leadership.iwi.id }}" class="btn btn-outline-primary btn-sm">Create Consultation</a>
+                  {% if not leadership.iwi.is_archived %}
+                    <a href="{% url 'consultation:create_proposal' %}?iwi={{ leadership.iwi.id }}" class="btn btn-outline-primary btn-sm">Create Consultation</a>
+                  {% else %}
+                    <span class="badge bg-secondary">Archived</span>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -41,7 +48,15 @@
                 <div class="card-body">
                   <h5 class="card-title text-success">{{ leadership.hapu.name }}</h5>
                   <p class="card-text mb-2">Hapu of <strong>{{ leadership.hapu.iwi.name }}</strong></p>
-                  <a href="{% url 'consultation:create_proposal' %}?hapu={{ leadership.hapu.id }}" class="btn btn-outline-success btn-sm">Create Consultation</a>
+                  {% if not leadership.hapu.is_archived %}
+                    <div class="d-grid gap-1">
+                      <a href="{% url 'hapumgmt:hapu_detail' leadership.hapu.id %}" class="btn btn-outline-info btn-sm">View Details</a>
+                      <a href="{% url 'consultation:create_proposal' %}?hapu={{ leadership.hapu.id }}" class="btn btn-outline-success btn-sm">Create Consultation</a>
+                      <a href="{% url 'usermgmt:hapu_user_approval' %}?hapu={{ leadership.hapu.id }}" class="btn btn-outline-warning btn-sm">Approve Users</a>
+                    </div>
+                  {% else %}
+                    <span class="badge bg-secondary">Archived</span>
+                  {% endif %}
                 </div>
               </div>
             </div>
