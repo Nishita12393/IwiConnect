@@ -23,11 +23,11 @@
                     <a href="{{ notice.attachment.url }}" target="_blank" class="btn btn-outline-secondary">Download Attachment</a>
                 </div>
             {% endif %}
-            <a href="{% url 'notice_list' %}" class="btn btn-link">&larr; Back to Notices</a>
+            <a href="{% url 'notice:notice_list' %}" class="btn btn-link">&larr; Back to Notices</a>
             {% if user == notice.created_by or user.is_staff %}
-                <a href="{% url 'edit_notice' notice.pk %}" class="btn btn-primary ms-2">Edit Notice</a>
-                <a href="{% url 'notice_engagement' notice.pk %}" class="btn btn-info ms-2">View Engagement</a>
-                <a href="{% url 'manage_notices' %}" class="btn btn-secondary ms-2">Manage Notices</a>
+                <a href="{% url 'notice:edit_notice' notice.pk %}" class="btn btn-primary ms-2">Edit Notice</a>
+                <a href="{% url 'notice:notice_engagement' notice.pk %}" class="btn btn-info ms-2">View Engagement</a>
+                <a href="{% url 'notice:manage_notices' %}" class="btn btn-secondary ms-2">Manage Notices</a>
             {% endif %}
         </div>
     </div>

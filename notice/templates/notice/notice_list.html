@@ -37,7 +37,7 @@
     </form>
     {% if user.is_staff or user.iwi_leaderships.all or user.hapu_leaderships.all %}
         <div class="mb-3 text-end">
-            <a href="{% url 'create_notice' %}" class="btn btn-primary">New Notice</a>
+            <a href="{% url 'notice:create_notice' %}" class="btn btn-primary">New Notice</a>
         </div>
     {% endif %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
@@ -48,7 +48,7 @@
                     <h5 class="card-title">{{ notice.title }}</h5>
                     <p class="card-text">{{ notice.content|truncatewords:30|safe }}</p>
                     <p class="card-text"><small class="text-muted">Expires: {{ notice.expiry_date|date:'Y-m-d H:i' }}</small></p>
-                    <a href="{% url 'notice_detail' notice.pk %}" class="btn btn-outline-primary btn-sm">View</a>
+                    <a href="{% url 'notice:notice_detail' notice.pk %}" class="btn btn-outline-primary btn-sm">View</a>
                 </div>
             </div>
         </div>

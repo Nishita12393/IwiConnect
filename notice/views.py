@@ -28,13 +28,15 @@ def notice_list(request):
     paginator = Paginator(notices, 6)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    iwis = Iwi.objects.filter(is_archived=False)
+    hapus = Hapu.objects.filter(is_archived=False)
     return render(request, 'notice/notice_list.html', {
         'page_obj': page_obj,
         'audience': audience,
         'iwi': iwi,
         'hapu': hapu,
-        'iwis': Iwi.objects.all(),
-        'hapus': Hapu.objects.all(),
+        'iwis': iwis,
+        'hapus': hapus,
     })
 
 @login_required
@@ -50,14 +52,14 @@ def create_notice(request):
     user = request.user
     is_admin = user.is_staff
     allowed_audience = [('ALL', 'All Users'), ('IWI', 'Specific Iwi'), ('HAPU', 'Specific Hapu')]
-    iwi_qs = Iwi.objects.all()
+    iwi_qs = Iwi.objects.filter(is_archived=False)
     hapu_qs = Hapu.objects.all()
     if not is_admin:
         iwi_ids = list(user.iwi_leaderships.values_list('iwi_id', flat=True))
         hapu_ids = list(user.hapu_leaderships.values_list('hapu_id', flat=True))
         if iwi_ids:
             # Iwi leader (may also be hapu leader): can select from their iwi and its hapus
-            iwi_qs = Iwi.objects.filter(id__in=iwi_ids)
+            iwi_qs = Iwi.objects.filter(id__in=iwi_ids, is_archived=False)
             hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids)
             allowed_audience = [('IWI', 'Specific Iwi'), ('HAPU', 'Specific Hapu')]
         elif hapu_ids:
@@ -75,10 +77,10 @@ def create_notice(request):
             notice.created_by = user
             notice.save()
             messages.success(request, 'Notice created successfully!')
-            return redirect('notice_list')
+            return redirect('notice:notice_list')
         else:
             messages.error(request, 'Please correct the errors below and try again.')
-            return redirect('create_notice')
+            return redirect('notice:create_notice')
     else:
         form = NoticeForm()
         form.fields['iwi'].queryset = iwi_qs
@@ -97,13 +99,13 @@ def edit_notice(request, pk):
     user = request.user
     is_admin = user.is_staff
     allowed_audience = [('ALL', 'All Users'), ('IWI', 'Specific Iwi'), ('HAPU', 'Specific Hapu')]
-    iwi_qs = Iwi.objects.all()
+    iwi_qs = Iwi.objects.filter(is_archived=False)
     hapu_qs = Hapu.objects.all()
     if not is_admin:
         iwi_ids = list(user.iwi_leaderships.values_list('iwi_id', flat=True))
         hapu_ids = list(user.hapu_leaderships.values_list('hapu_id', flat=True))
         if iwi_ids:
-            iwi_qs = Iwi.objects.filter(id__in=iwi_ids)
+            iwi_qs = Iwi.objects.filter(id__in=iwi_ids, is_archived=False)
             hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids)
             allowed_audience = [('IWI', 'Specific Iwi'), ('HAPU', 'Specific Hapu')]
         elif hapu_ids:
@@ -118,10 +120,10 @@ def edit_notice(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Notice updated successfully!')
-            return redirect('manage_notices')
+            return redirect('notice:manage_notices')
         else:
             messages.error(request, 'Please correct the errors below and try again.')
-            return redirect('edit_notice', pk=notice.pk)
+            return redirect('notice:edit_notice', pk=notice.pk)
     else:
         form = NoticeForm(instance=notice)
         form.fields['iwi'].queryset = iwi_qs
@@ -135,7 +137,7 @@ def delete_notice(request, pk):
     if request.method == 'POST':
         notice.delete()
         messages.success(request, 'Notice deleted successfully!')
-        return redirect('manage_notices')
+        return redirect('notice:manage_notices')
     return render(request, 'notice/delete_notice.html', {'notice': notice})
 
 @user_passes_test(is_leader_or_admin)
@@ -145,7 +147,7 @@ def expire_notice(request, pk):
         notice.expiry_date = timezone.now()
         notice.save()
         messages.success(request, 'Notice expired successfully!')
-        return redirect('manage_notices')
+        return redirect('notice:manage_notices')
     return render(request, 'notice/expire_notice.html', {'notice': notice})
 
 @user_passes_test(is_leader_or_admin)
