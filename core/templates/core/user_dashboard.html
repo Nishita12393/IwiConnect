@@ -4,9 +4,9 @@
 <div class="container">
   <h2 class="mb-4">Welcome, {{ user.full_name }}</h2>
   <div class="mb-4">
-    <a href="/logout/" class="btn btn-outline-secondary">Logout</a>
+    <a href="{% url 'logout' %}" class="btn btn-outline-secondary">Logout</a>
     {% if user.iwi_leaderships.all %}
-      <a href="/usermgmt/manage-hapu-leaders/" class="btn btn-primary ms-2">Manage Hapu Leaders</a>
+      <a href="{% url 'usermgmt:manage_hapu_leaders' %}" class="btn btn-primary ms-2">Manage Hapu Leaders</a>
       <a href="{% url 'hapumgmt:hapu_list' %}" class="btn btn-success ms-2">Manage Hapus</a>
     {% endif %}
   </div>
@@ -22,7 +22,7 @@
                 <div class="card-body">
                   <h5 class="card-title text-primary">{{ leadership.iwi.name }}</h5>
                   <p class="card-text mb-2">Iwi Leader</p>
-                  <a href="/consultations/?iwi={{ leadership.iwi.id }}" class="btn btn-outline-primary btn-sm">Create Consultation</a>
+                  <a href="{% url 'consultation:create_proposal' %}?iwi={{ leadership.iwi.id }}" class="btn btn-outline-primary btn-sm">Create Consultation</a>
                 </div>
               </div>
             </div>
@@ -41,7 +41,7 @@
                 <div class="card-body">
                   <h5 class="card-title text-success">{{ leadership.hapu.name }}</h5>
                   <p class="card-text mb-2">Hapu of <strong>{{ leadership.hapu.iwi.name }}</strong></p>
-                  <a href="/consultations/?hapu={{ leadership.hapu.id }}" class="btn btn-outline-success btn-sm">Create Consultation</a>
+                  <a href="{% url 'consultation:create_proposal' %}?hapu={{ leadership.hapu.id }}" class="btn btn-outline-success btn-sm">Create Consultation</a>
                 </div>
               </div>
             </div>

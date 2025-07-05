@@ -4,7 +4,7 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Proposals</h2>
-        <a href="/consultations/" class="btn btn-primary">New Proposal</a>
+        <a href="{% url 'consultation:create_proposal' %}" class="btn btn-primary">New Proposal</a>
     </div>
     <div class="table-responsive">
         <table class="table table-striped table-hover">
