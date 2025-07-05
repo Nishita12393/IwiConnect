@@ -127,13 +127,6 @@
                             {# Removed New Notice link from navbar #}
                         {% endif %}
                         <li class="nav-item"><a class="nav-link{% if request.path|startswith:'/events' %} active{% endif %}" href="{% url 'events:event_calendar' %}">Event Calendar</a></li>
-                        {% if user.is_staff %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'usermgmt:user_list' %}">User Management</a></li>
-                            <li class="nav-item"><a class="nav-link{% if request.path|startswith:'/usermgmt/manage-iwi-leaders' %} active{% endif %}" href="{% url 'usermgmt:manage_iwi_leaders' %}">Manage Iwi Leaders</a></li>
-                            <li class="nav-item"><a class="nav-link{% if request.path|startswith:'/usermgmt/manage-hapu-leaders' %} active{% endif %}" href="{% url 'usermgmt:manage_hapu_leaders' %}">Manage Hapu Leaders</a></li>
-                        {% elif user.iwi_leaderships.all %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'usermgmt:manage_hapu_leaders' %}">Manage Hapu Leaders</a></li>
-                        {% endif %}
                         <li class="nav-item"><a class="nav-link{% if request.path == '/profile/' %} active{% endif %}" href="{% url 'profile' %}">My Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
                     {% else %}
