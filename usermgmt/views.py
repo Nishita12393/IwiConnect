@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test, login_required
+from django.contrib import messages
 from core.models import CustomUser, Iwi, IwiLeader, Hapu, HapuLeader
 from django.urls import reverse
 from django.http import HttpResponseForbidden, FileResponse, Http404
@@ -8,6 +9,17 @@ from core.views import send_account_approved_email, send_account_rejected_email
 from django.core.paginator import Paginator
 import os
 import threading
+import logging
+
+logger = logging.getLogger(__name__)
+
+def send_email_with_logging(email_function, user, email_type):
+    """Send email with error logging"""
+    try:
+        email_function(user)
+        logger.info(f"Successfully sent {email_type} email to user {user.email} (ID: {user.id})")
+    except Exception as e:
+        logger.error(f"Failed to send {email_type} email to user {user.email} (ID: {user.id}): {str(e)}")
 
 def is_admin(user):
     return user.is_authenticated and user.is_staff
@@ -31,15 +43,25 @@ def user_list(request):
             user_to_verify = get_object_or_404(CustomUser, id=user_id)
             user_to_verify.state = 'VERIFIED'
             user_to_verify.save()
-            # Send approval email in background thread
-            threading.Thread(target=send_account_approved_email, args=(user_to_verify,), daemon=True).start()
+            # Send approval email in background thread with error logging
+            threading.Thread(
+                target=send_email_with_logging, 
+                args=(send_account_approved_email, user_to_verify, 'approval'), 
+                daemon=True
+            ).start()
+            messages.success(request, f'User {user_to_verify.full_name} has been verified successfully.')
         elif reject_id:
             user_to_reject = get_object_or_404(CustomUser, id=reject_id)
             user_to_reject.state = 'REJECTED'
             user_to_reject.save()
-            # Send rejection email in background thread
-            threading.Thread(target=send_account_rejected_email, args=(user_to_reject,), daemon=True).start()
-        return redirect(f"{reverse('user_list')}?state={state}")
+            # Send rejection email in background thread with error logging
+            threading.Thread(
+                target=send_email_with_logging, 
+                args=(send_account_rejected_email, user_to_reject, 'rejection'), 
+                daemon=True
+            ).start()
+            messages.success(request, f'User {user_to_reject.full_name} has been rejected successfully.')
+        return redirect(f"{reverse('usermgmt:user_list')}?state={state}")
     return render(request, 'usermgmt/user_list.html', {
         'page_obj': page_obj,
         'state': state,
