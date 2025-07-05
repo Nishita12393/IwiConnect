@@ -37,6 +37,11 @@
         {% else %}
             <a href="{% url 'hapumgmt:hapu_unarchive' hapu.pk %}" class="btn btn-success">Unarchive Hapu</a>
         {% endif %}
+        
+        {% if hapu.iwi.is_archived and not hapu.is_archived %}
+            <a href="{% url 'hapumgmt:hapu_transfer' hapu.pk %}" class="btn btn-info">Transfer to Another Iwi</a>
+        {% endif %}
+        
         <a href="{% url 'hapumgmt:hapu_list' %}" class="btn btn-secondary">Back to List</a>
     </div>
 </div>

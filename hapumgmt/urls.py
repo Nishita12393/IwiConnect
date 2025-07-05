@@ -10,4 +10,5 @@ urlpatterns = [
     path('<int:pk>/edit/', views.hapu_edit, name='hapu_edit'),
     path('<int:pk>/archive/', views.hapu_archive, name='hapu_archive'),
     path('<int:pk>/unarchive/', views.hapu_unarchive, name='hapu_unarchive'),
+    path('<int:pk>/transfer/', views.hapu_transfer, name='hapu_transfer'),
 ] 

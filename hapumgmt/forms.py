@@ -34,4 +34,24 @@ class HapuArchiveForm(forms.Form):
         required=True,
         label="I confirm that I want to archive this hapu",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
-    ) 
+    )
+
+class HapuTransferForm(forms.Form):
+    new_iwi = forms.ModelChoiceField(
+        queryset=Iwi.objects.filter(is_archived=False),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label="Select a new Iwi",
+        label="Transfer to Iwi"
+    )
+    confirm_transfer = forms.BooleanField(
+        required=True,
+        label="I confirm that I want to transfer this hapu to the selected iwi",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        current_iwi = kwargs.pop('current_iwi', None)
+        super().__init__(*args, **kwargs)
+        if current_iwi:
+            # Exclude the current iwi from the choices
+            self.fields['new_iwi'].queryset = Iwi.objects.filter(is_archived=False).exclude(pk=current_iwi.pk) 

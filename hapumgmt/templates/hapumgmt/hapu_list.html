@@ -3,6 +3,13 @@
 <div class="container mt-4">
     <h2>Manage Hapus</h2>
     <a href="{% url 'hapumgmt:hapu_create' %}" class="btn btn-primary mb-3">Create New Hapu</a>
+    
+    {% if hapus_with_archived_iwis %}
+        <div class="alert alert-warning" role="alert">
+            <strong>Note:</strong> You have {{ hapus_with_archived_iwis.count }} hapu(s) with archived iwis. 
+            These hapus can be transferred to other active iwis.
+        </div>
+    {% endif %}
     <h4>Active Hapus</h4>
     {% if active_page_obj %}
         <table class="table table-bordered">
@@ -21,8 +28,13 @@
                     <td>{{ hapu.iwi.name }}</td>
                     <td>{{ hapu.description|default:'-' }}</td>
                     <td>
-                        <a href="{% url 'hapumgmt:hapu_edit' hapu.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                        <a href="{% url 'hapumgmt:hapu_archive' hapu.pk %}" class="btn btn-sm btn-outline-danger ms-1">Archive</a>
+                        {% if not hapu.iwi.is_archived %}
+                            <a href="{% url 'hapumgmt:hapu_edit' hapu.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <a href="{% url 'hapumgmt:hapu_archive' hapu.pk %}" class="btn btn-sm btn-outline-danger ms-1">Archive</a>
+                        {% else %}
+                            <span class="badge bg-warning text-dark me-2">Iwi Archived</span>
+                            <a href="{% url 'hapumgmt:hapu_transfer' hapu.pk %}" class="btn btn-sm btn-outline-info">Transfer</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

@@ -1,0 +1,65 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Transfer Hapu</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Transfer "{{ hapu.name }}" to Another Iwi</h5>
+            <p class="card-text">
+                <strong>Current Iwi:</strong> {{ hapu.iwi.name }} 
+                <span class="badge bg-danger">Archived</span>
+            </p>
+            <p class="card-text">
+                <strong>Description:</strong> {{ hapu.description|default:'No description provided' }}
+            </p>
+            
+            <div class="alert alert-warning">
+                <strong>Note:</strong> Transferring this hapu will move it to the selected iwi. 
+                This action cannot be undone.
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.new_iwi.id_for_label }}" class="form-label">{{ form.new_iwi.label }}</label>
+                    {{ form.new_iwi }}
+                    {% if form.new_iwi.errors %}
+                        <div class="text-danger">
+                            {% for error in form.new_iwi.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.confirm_transfer }}
+                        <label class="form-check-label" for="{{ form.confirm_transfer.id_for_label }}">
+                            {{ form.confirm_transfer.label }}
+                        </label>
+                    </div>
+                    {% if form.confirm_transfer.errors %}
+                        <div class="text-danger">
+                            {% for error in form.confirm_transfer.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-warning">Transfer Hapu</button>
+                    <a href="{% url 'hapumgmt:hapu_detail' hapu.pk %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 
