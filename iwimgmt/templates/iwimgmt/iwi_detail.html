@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+{% block page_title %}{{ iwi.name }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0">{{ iwi.name }}</h3>
+          {% if iwi.is_archived %}
+            <span class="badge bg-secondary">Archived</span>
+          {% else %}
+            <span class="badge bg-success">Active</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          {% if iwi.description %}
+            <div class="mb-4">
+              <h5>Description</h5>
+              <p>{{ iwi.description|linebreaks }}</p>
+            </div>
+          {% endif %}
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Statistics</h5>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Number of Hapus:</span>
+                  <span class="badge bg-info">{{ iwi.hapu.count }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Number of Members:</span>
+                  <span class="badge bg-primary">{{ iwi.customuser_set.count }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Number of Leaders:</span>
+                  <span class="badge bg-warning">{{ iwi.leaders.count }}</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div class="col-md-6">
+              <h5>Status Information</h5>
+              <ul class="list-group list-group-flush">
+                {% if iwi.is_archived %}
+                  <li class="list-group-item">
+                    <strong>Archived:</strong> Yes
+                  </li>
+                  {% if iwi.archived_at %}
+                    <li class="list-group-item">
+                      <strong>Archived Date:</strong> {{ iwi.archived_at|date:"F d, Y" }}
+                    </li>
+                  {% endif %}
+                  {% if iwi.archived_by %}
+                    <li class="list-group-item">
+                      <strong>Archived By:</strong> {{ iwi.archived_by.full_name }}
+                    </li>
+                  {% endif %}
+                {% else %}
+                  <li class="list-group-item">
+                    <strong>Status:</strong> Active
+                  </li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Actions</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            {% if not iwi.is_archived %}
+              <a href="{% url 'iwimgmt:iwi_edit' iwi.id %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Edit Iwi
+              </a>
+              <a href="{% url 'iwimgmt:iwi_archive' iwi.id %}" class="btn btn-danger">
+                <i class="fas fa-archive"></i> Archive Iwi
+              </a>
+            {% else %}
+              <a href="{% url 'iwimgmt:iwi_unarchive' iwi.id %}" class="btn btn-success">
+                <i class="fas fa-undo"></i> Unarchive Iwi
+              </a>
+            {% endif %}
+            <a href="{% url 'iwimgmt:iwi_list' %}" class="btn btn-secondary">
+              <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

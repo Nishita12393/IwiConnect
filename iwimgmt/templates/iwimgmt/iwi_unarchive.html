@@ -1,0 +1,84 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Unarchive {{ iwi.name }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white">
+          <h3 class="card-title mb-0">
+            <i class="fas fa-undo"></i> Unarchive Iwi
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <h5>Unarchive "{{ iwi.name }}"</h5>
+            <p class="mb-0">
+              Unarchiving an iwi will:
+            </p>
+            <ul class="mb-0 mt-2">
+              <li>Make it available in all selection dropdowns</li>
+              <li>Allow new users to select it during registration</li>
+              <li>Restore it to active status</li>
+              <li>Keep all existing data intact</li>
+            </ul>
+          </div>
+          
+          <div class="mb-4">
+            <h5>Iwi Details</h5>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between">
+                <span><strong>Name:</strong></span>
+                <span>{{ iwi.name }}</span>
+              </li>
+              {% if iwi.description %}
+                <li class="list-group-item d-flex justify-content-between">
+                  <span><strong>Description:</strong></span>
+                  <span>{{ iwi.description|truncatewords:10 }}</span>
+                </li>
+              {% endif %}
+              <li class="list-group-item d-flex justify-content-between">
+                <span><strong>Number of Hapus:</strong></span>
+                <span class="badge bg-info">{{ iwi.hapu.count }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span><strong>Number of Members:</strong></span>
+                <span class="badge bg-primary">{{ iwi.customuser_set.count }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span><strong>Number of Leaders:</strong></span>
+                <span class="badge bg-warning">{{ iwi.leaders.count }}</span>
+              </li>
+              {% if iwi.archived_at %}
+                <li class="list-group-item d-flex justify-content-between">
+                  <span><strong>Archived Date:</strong></span>
+                  <span>{{ iwi.archived_at|date:"F d, Y" }}</span>
+                </li>
+              {% endif %}
+              {% if iwi.archived_by %}
+                <li class="list-group-item d-flex justify-content-between">
+                  <span><strong>Archived By:</strong></span>
+                  <span>{{ iwi.archived_by.full_name }}</span>
+                </li>
+              {% endif %}
+            </ul>
+          </div>
+          
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'iwimgmt:iwi_detail' iwi.id %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+              </a>
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-undo"></i> Unarchive Iwi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

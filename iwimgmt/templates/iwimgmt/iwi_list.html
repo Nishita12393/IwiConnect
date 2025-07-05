@@ -1,0 +1,109 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Manage Iwis - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Manage Iwis</h2>
+    <a href="{% url 'iwimgmt:iwi_create' %}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Create New Iwi
+    </a>
+  </div>
+
+  <!-- Filter Toggle -->
+  <div class="mb-3">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="showArchived" 
+             {% if show_archived %}checked{% endif %}
+             onchange="toggleArchived()">
+      <label class="form-check-label" for="showArchived">
+        Show Archived Iwis
+      </label>
+    </div>
+  </div>
+
+  <!-- Iwi List -->
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Hapus</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for iwi in iwis %}
+        <tr {% if iwi.is_archived %}class="table-secondary"{% endif %}>
+          <td>
+            <strong>{{ iwi.name }}</strong>
+            {% if iwi.is_archived %}
+              <span class="badge bg-secondary ms-2">Archived</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if iwi.description %}
+              {{ iwi.description|truncatewords:20 }}
+            {% else %}
+              <span class="text-muted">No description</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if iwi.is_archived %}
+              <span class="badge bg-secondary">Archived</span>
+              {% if iwi.archived_at %}
+                <br><small class="text-muted">{{ iwi.archived_at|date:"M d, Y" }}</small>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-success">Active</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge bg-info">{{ iwi.hapu.count }}</span>
+          </td>
+          <td>
+            <div class="btn-group" role="group">
+              <a href="{% url 'iwimgmt:iwi_detail' iwi.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i> View
+              </a>
+              {% if not iwi.is_archived %}
+                <a href="{% url 'iwimgmt:iwi_edit' iwi.id %}" class="btn btn-sm btn-outline-warning">
+                  <i class="fas fa-edit"></i> Edit
+                </a>
+                <a href="{% url 'iwimgmt:iwi_archive' iwi.id %}" class="btn btn-sm btn-outline-danger">
+                  <i class="fas fa-archive"></i> Archive
+                </a>
+              {% else %}
+                <a href="{% url 'iwimgmt:iwi_unarchive' iwi.id %}" class="btn btn-sm btn-outline-success">
+                  <i class="fas fa-undo"></i> Unarchive
+                </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">
+            {% if show_archived %}
+              No iwis found (including archived).
+            {% else %}
+              No active iwis found.
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function toggleArchived() {
+  const showArchived = document.getElementById('showArchived').checked;
+  const currentUrl = new URL(window.location);
+  currentUrl.searchParams.set('show_archived', showArchived);
+  window.location.href = currentUrl.toString();
+}
+</script>
+{% endblock %} 

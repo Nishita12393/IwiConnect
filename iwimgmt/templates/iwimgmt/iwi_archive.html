@@ -1,0 +1,95 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Archive {{ iwi.name }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+          <h3 class="card-title mb-0">
+            <i class="fas fa-exclamation-triangle"></i> Archive Iwi
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning">
+            <h5>Warning: This action will archive "{{ iwi.name }}"</h5>
+            <p class="mb-0">
+              Archiving an iwi will:
+            </p>
+            <ul class="mb-0 mt-2">
+              <li>Hide it from all selection dropdowns</li>
+              <li>Prevent new users from selecting it during registration</li>
+              <li>Keep all existing data intact</li>
+              <li>Allow you to unarchive it later if needed</li>
+            </ul>
+          </div>
+          
+          <div class="mb-4">
+            <h5>Iwi Details</h5>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between">
+                <span><strong>Name:</strong></span>
+                <span>{{ iwi.name }}</span>
+              </li>
+              {% if iwi.description %}
+                <li class="list-group-item d-flex justify-content-between">
+                  <span><strong>Description:</strong></span>
+                  <span>{{ iwi.description|truncatewords:10 }}</span>
+                </li>
+              {% endif %}
+              <li class="list-group-item d-flex justify-content-between">
+                <span><strong>Number of Hapus:</strong></span>
+                <span class="badge bg-info">{{ iwi.hapu.count }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span><strong>Number of Members:</strong></span>
+                <span class="badge bg-primary">{{ iwi.customuser_set.count }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span><strong>Number of Leaders:</strong></span>
+                <span class="badge bg-warning">{{ iwi.leaders.count }}</span>
+              </li>
+            </ul>
+          </div>
+          
+          <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+            
+            <div class="mb-3">
+              <label for="{{ form.reason.id_for_label }}" class="form-label">
+                Reason for Archiving (Optional)
+              </label>
+              {{ form.reason }}
+              {% if form.reason.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.reason.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              <div class="form-text">Optional reason for archiving this iwi.</div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'iwimgmt:iwi_detail' iwi.id %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+              </a>
+              <button type="submit" class="btn btn-danger">
+                <i class="fas fa-archive"></i> Archive Iwi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 
