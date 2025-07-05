@@ -7,6 +7,7 @@
     <a href="/logout/" class="btn btn-outline-secondary">Logout</a>
     {% if user.iwi_leaderships.all %}
       <a href="/usermgmt/manage-hapu-leaders/" class="btn btn-primary ms-2">Manage Hapu Leaders</a>
+      <a href="{% url 'hapumgmt:hapu_list' %}" class="btn btn-success ms-2">Manage Hapus</a>
     {% endif %}
   </div>
 

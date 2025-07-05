@@ -28,4 +28,37 @@
     </div>
   </div>
 </div>
+
+<div class="row">
+  <div class="col-12">
+    <h3 class="mb-3">Quick Actions</h3>
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'iwimgmt:iwi_list' %}" class="btn btn-outline-primary w-100">
+          <i class="fas fa-users"></i> Manage Iwis
+        </a>
+      </div>
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'usermgmt:user_list' %}" class="btn btn-outline-secondary w-100">
+          <i class="fas fa-user-cog"></i> Manage Users
+        </a>
+      </div>
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'usermgmt:manage_iwi_leaders' %}" class="btn btn-outline-warning w-100">
+          <i class="fas fa-crown"></i> Manage Iwi Leaders
+        </a>
+      </div>
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'notice:manage_notices' %}" class="btn btn-outline-info w-100">
+          <i class="fas fa-bullhorn"></i> Manage Notices
+        </a>
+      </div>
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'hapumgmt:hapu_list' %}" class="btn btn-outline-success w-100">
+          <i class="fas fa-leaf"></i> Manage Hapus
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %} 
