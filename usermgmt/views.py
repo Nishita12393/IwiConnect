@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.http import HttpResponseForbidden, FileResponse, Http404
 from django.conf import settings
 from core.views import send_account_approved_email, send_account_rejected_email
+from django.core.paginator import Paginator
 import os
 import threading
 
@@ -17,6 +18,12 @@ def user_list(request):
     users = CustomUser.objects.all().order_by('-registered_at')
     if state:
         users = users.filter(state=state)
+    
+    # Pagination
+    paginator = Paginator(users, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     if request.method == 'POST':
         user_id = request.POST.get('verify_user_id')
         reject_id = request.POST.get('reject_user_id')
@@ -34,7 +41,7 @@ def user_list(request):
             threading.Thread(target=send_account_rejected_email, args=(user_to_reject,), daemon=True).start()
         return redirect(f"{reverse('user_list')}?state={state}")
     return render(request, 'usermgmt/user_list.html', {
-        'users': users,
+        'page_obj': page_obj,
         'state': state,
         'states': CustomUser.STATE_CHOICES,
     })

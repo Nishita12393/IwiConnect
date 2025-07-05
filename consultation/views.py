@@ -99,7 +99,13 @@ def create_proposal(request):
 @user_passes_test(is_leader)
 def proposal_list(request):
     proposals = Proposal.objects.all().order_by('-created_at')
-    return render(request, 'consultation/proposal_list.html', {'proposals': proposals})
+    
+    # Pagination
+    paginator = Paginator(proposals, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'consultation/proposal_list.html', {'page_obj': page_obj})
 
 @user_passes_test(is_leader)
 def proposal_detail(request, pk):

@@ -34,7 +34,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for iwi in iwis %}
+        {% for iwi in page_obj %}
         <tr {% if iwi.is_archived %}class="table-secondary"{% endif %}>
           <td>
             <strong>{{ iwi.name }}</strong>
@@ -96,6 +96,43 @@
       </tbody>
     </table>
   </div>
+  
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+    <nav aria-label="Iwi pagination">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if show_archived %}&show_archived=true{% endif %}">&laquo; First</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if show_archived %}&show_archived=true{% endif %}">Previous</a>
+          </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ num }}{% if show_archived %}&show_archived=true{% endif %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if show_archived %}&show_archived=true{% endif %}">Next</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if show_archived %}&show_archived=true{% endif %}">Last &raquo;</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
 </div>
 
 <script>

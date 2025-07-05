@@ -4,7 +4,7 @@
     <h2>Manage Hapus</h2>
     <a href="{% url 'hapumgmt:hapu_create' %}" class="btn btn-primary mb-3">Create New Hapu</a>
     <h4>Active Hapus</h4>
-    {% if active_hapus %}
+    {% if active_page_obj %}
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -15,7 +15,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for hapu in active_hapus %}
+                {% for hapu in active_page_obj %}
                 <tr>
                     <td><a href="{% url 'hapumgmt:hapu_detail' hapu.pk %}">{{ hapu.name }}</a></td>
                     <td>{{ hapu.iwi.name }}</td>
@@ -28,11 +28,48 @@
                 {% endfor %}
             </tbody>
         </table>
+        
+        <!-- Active Hapus Pagination -->
+        {% if active_page_obj.has_other_pages %}
+            <nav aria-label="Active hapus pagination">
+                <ul class="pagination justify-content-center">
+                    {% if active_page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?active_page=1">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?active_page={{ active_page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in active_page_obj.paginator.page_range %}
+                        {% if active_page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > active_page_obj.number|add:'-3' and num < active_page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?active_page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if active_page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?active_page={{ active_page_obj.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?active_page={{ active_page_obj.paginator.num_pages }}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
     {% else %}
         <p>No active hapus found.</p>
     {% endif %}
     <h4 class="mt-4">Archived Hapus</h4>
-    {% if archived_hapus %}
+    {% if archived_page_obj %}
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -44,7 +81,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for hapu in archived_hapus %}
+                {% for hapu in archived_page_obj %}
                 <tr>
                     <td><a href="{% url 'hapumgmt:hapu_detail' hapu.pk %}">{{ hapu.name }}</a></td>
                     <td>{{ hapu.iwi.name }}</td>
@@ -57,6 +94,43 @@
                 {% endfor %}
             </tbody>
         </table>
+        
+        <!-- Archived Hapus Pagination -->
+        {% if archived_page_obj.has_other_pages %}
+            <nav aria-label="Archived hapus pagination">
+                <ul class="pagination justify-content-center">
+                    {% if archived_page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?archived_page=1">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?archived_page={{ archived_page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in archived_page_obj.paginator.page_range %}
+                        {% if archived_page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > archived_page_obj.number|add:'-3' and num < archived_page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?archived_page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if archived_page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?archived_page={{ archived_page_obj.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?archived_page={{ archived_page_obj.paginator.num_pages }}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
     {% else %}
         <p>No archived hapus found.</p>
     {% endif %}

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.urls import reverse
 from django.utils import timezone
+from django.core.paginator import Paginator
 from core.models import Iwi
 from .forms import IwiForm, IwiArchiveForm
 
@@ -19,8 +20,13 @@ def iwi_list(request):
     else:
         iwis = Iwi.objects.filter(is_archived=False).order_by('name')
     
+    # Pagination
+    paginator = Paginator(iwis, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     return render(request, 'iwimgmt/iwi_list.html', {
-        'iwis': iwis,
+        'page_obj': page_obj,
         'show_archived': show_archived,
     })
 

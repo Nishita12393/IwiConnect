@@ -17,9 +17,19 @@ def hapu_list(request):
     active_hapus = hapus.filter(is_archived=False)
     archived_hapus = hapus.filter(is_archived=True)
     
+    # Pagination for active hapus
+    active_paginator = Paginator(active_hapus, 20)
+    active_page_number = request.GET.get('active_page')
+    active_page_obj = active_paginator.get_page(active_page_number)
+    
+    # Pagination for archived hapus
+    archived_paginator = Paginator(archived_hapus, 20)
+    archived_page_number = request.GET.get('archived_page')
+    archived_page_obj = archived_paginator.get_page(archived_page_number)
+    
     context = {
-        'active_hapus': active_hapus,
-        'archived_hapus': archived_hapus,
+        'active_page_obj': active_page_obj,
+        'archived_page_obj': archived_page_obj,
     }
     return render(request, 'hapumgmt/hapu_list.html', context)
 
