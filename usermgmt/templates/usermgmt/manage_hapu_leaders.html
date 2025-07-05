@@ -33,19 +33,25 @@
       {% endfor %}
     </ul>
     <h4>Add Leader</h4>
-    <form method="post" class="row g-3 align-items-end">
-      {% csrf_token %}
-      <div class="col-auto">
-        <select name="add_leader" class="form-select">
-          {% for user in users %}
-            <option value="{{ user.id }}">{{ user.full_name }} ({{ user.email }})</option>
-          {% endfor %}
-        </select>
+    {% if users %}
+      <form method="post" class="row g-3 align-items-end">
+        {% csrf_token %}
+        <div class="col-auto">
+          <select name="add_leader" class="form-select">
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.full_name }} ({{ user.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    {% else %}
+      <div class="alert alert-info">
+        <p class="mb-0">No users available to add as leaders for this hapu. All verified users from this hapu are already leaders or there are no verified users in this hapu.</p>
       </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Add</button>
-      </div>
-    </form>
+    {% endif %}
   {% endif %}
 </div>
 {% endblock %} 

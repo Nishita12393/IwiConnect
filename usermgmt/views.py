@@ -4,7 +4,9 @@ from core.models import CustomUser, Iwi, IwiLeader, Hapu, HapuLeader
 from django.urls import reverse
 from django.http import HttpResponseForbidden, FileResponse, Http404
 from django.conf import settings
+from core.views import send_account_approved_email, send_account_rejected_email
 import os
+import threading
 
 def is_admin(user):
     return user.is_authenticated and user.is_staff
@@ -22,10 +24,14 @@ def user_list(request):
             user_to_verify = get_object_or_404(CustomUser, id=user_id)
             user_to_verify.state = 'VERIFIED'
             user_to_verify.save()
+            # Send approval email in background thread
+            threading.Thread(target=send_account_approved_email, args=(user_to_verify,), daemon=True).start()
         elif reject_id:
             user_to_reject = get_object_or_404(CustomUser, id=reject_id)
             user_to_reject.state = 'REJECTED'
             user_to_reject.save()
+            # Send rejection email in background thread
+            threading.Thread(target=send_account_rejected_email, args=(user_to_reject,), daemon=True).start()
         return redirect(f"{reverse('user_list')}?state={state}")
     return render(request, 'usermgmt/user_list.html', {
         'users': users,
@@ -45,9 +51,9 @@ def view_citizenship_document(request, user_id):
 
 @user_passes_test(lambda u: u.is_authenticated and u.is_staff)
 def manage_iwi_leaders(request):
-    iwis = Iwi.objects.all()
+    iwis = Iwi.objects.filter(is_archived=False)
     selected_iwi_id = request.GET.get('iwi')
-    selected_iwi = Iwi.objects.filter(id=selected_iwi_id).first() if selected_iwi_id else None
+    selected_iwi = Iwi.objects.filter(id=selected_iwi_id, is_archived=False).first() if selected_iwi_id else None
     users = CustomUser.objects.filter(is_staff=False)
     if selected_iwi:
         users = users.filter(iwi=selected_iwi)
@@ -73,13 +79,27 @@ def manage_hapu_leaders(request):
     # Only Iwi leaders can access
     iwi_leaderships = IwiLeader.objects.filter(user=request.user)
     iwis = [il.iwi for il in iwi_leaderships]
-    hapus = Hapu.objects.filter(iwi__in=iwis)
-    users = CustomUser.objects.filter(is_staff=False)
+    hapus = Hapu.objects.filter(iwi__in=iwis, is_archived=False)
     selected_hapu_id = request.GET.get('hapu')
-    selected_hapu = Hapu.objects.filter(id=selected_hapu_id, iwi__in=iwis).first() if selected_hapu_id else None
+    selected_hapu = Hapu.objects.filter(id=selected_hapu_id, iwi__in=iwis, is_archived=False).first() if selected_hapu_id else None
+    
+    # Initialize empty querysets
+    users = CustomUser.objects.none()
+    leaders = []
+    
     if selected_hapu:
-        users = users.filter(hapu=selected_hapu)
-    leaders = HapuLeader.objects.filter(hapu=selected_hapu) if selected_hapu else []
+        # Get users who belong to the selected hapu and are not staff
+        users = CustomUser.objects.filter(
+            hapu=selected_hapu,
+            is_staff=False,
+            state='VERIFIED'  # Only show verified users
+        ).exclude(
+            hapu_leaderships__hapu=selected_hapu  # Exclude users who are already leaders
+        ).order_by('full_name')
+        
+        # Get current leaders for this hapu
+        leaders = HapuLeader.objects.filter(hapu=selected_hapu).select_related('user')
+    
     if request.method == 'POST' and selected_hapu:
         add_user_id = request.POST.get('add_leader')
         remove_user_id = request.POST.get('remove_leader')
@@ -89,6 +109,7 @@ def manage_hapu_leaders(request):
         if remove_user_id:
             HapuLeader.objects.filter(hapu=selected_hapu, user_id=remove_user_id).delete()
         return redirect(f'{request.path}?hapu={selected_hapu.id}')
+    
     return render(request, 'usermgmt/manage_hapu_leaders.html', {
         'hapus': hapus,
         'users': users,
