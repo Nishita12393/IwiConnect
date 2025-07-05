@@ -26,10 +26,10 @@ def create_event(request):
             event.created_by = request.user
             event.save()
             messages.success(request, 'Event created successfully!')
-            return redirect('event_calendar')
+            return redirect('events:event_calendar')
         else:
             messages.error(request, 'Please correct the errors below and try again.')
-            return redirect('create_event')
+            return redirect('events:create_event')
     else:
         form = EventForm()
     return render(request, 'events/create_event.html', {'form': form})
@@ -59,7 +59,7 @@ def event_detail(request, event_id):
 def join_event(request, event_id):
     event = get_object_or_404(Event, id=event_id)
     EventParticipant.objects.get_or_create(event=event, user=request.user)
-    return redirect('event_detail', event_id=event.id)
+    return redirect('events:event_detail', event_id=event.id)
 
 @login_required
 def my_events(request):

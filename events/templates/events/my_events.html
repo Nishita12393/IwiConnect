@@ -15,7 +15,7 @@
                         <h5 class="card-title">{{ event.title }}</h5>
                         <p class="card-text text-muted mb-1">{{ event.start_datetime|date:'D, d M Y H:i' }}</p>
                         <p class="card-text mb-2">{{ event.location|default:'TBA' }}</p>
-                        <a href="{% url 'event_detail' event.id %}" class="btn btn-primary btn-sm">View Details</a>
+                        <a href="{% url 'events:event_detail' event.id %}" class="btn btn-primary btn-sm">View Details</a>
                     </div>
                 </div>
             </div>

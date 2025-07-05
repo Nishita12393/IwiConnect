@@ -23,7 +23,7 @@
                     {% endif %}
                     <div class="d-flex gap-2">
                         {% if not joined %}
-                            <a href="{% url 'join_event' event.id %}" class="btn btn-success">Join Event</a>
+                            <a href="{% url 'events:join_event' event.id %}" class="btn btn-success">Join Event</a>
                         {% else %}
                             <span class="badge bg-success align-self-center">You have joined this event</span>
                         {% endif %}
