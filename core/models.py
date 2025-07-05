@@ -10,17 +10,57 @@ from django.utils import timezone
 class Iwi(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey('CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='archived_iwis')
 
     def __str__(self):
         return self.name
+
+    def archive(self, archived_by=None):
+        """Archive the iwi"""
+        self.is_archived = True
+        self.archived_at = timezone.now()
+        self.archived_by = archived_by
+        self.save()
+
+    def unarchive(self):
+        """Unarchive the iwi"""
+        self.is_archived = False
+        self.archived_at = None
+        self.archived_by = None
+        self.save()
+
+    class Meta:
+        ordering = ['name']
 
 class Hapu(models.Model):
     iwi = models.ForeignKey(Iwi, related_name='hapu', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey('CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='archived_hapus')
 
     def __str__(self):
         return f"{self.name} ({self.iwi.name})"
+
+    def archive(self, archived_by=None):
+        """Archive the hapu"""
+        self.is_archived = True
+        self.archived_at = timezone.now()
+        self.archived_by = archived_by
+        self.save()
+
+    def unarchive(self):
+        """Unarchive the hapu"""
+        self.is_archived = False
+        self.archived_at = None
+        self.archived_by = None
+        self.save()
+
+    class Meta:
+        ordering = ['name']
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):

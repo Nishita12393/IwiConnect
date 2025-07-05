@@ -48,6 +48,11 @@ class RegistrationForm(forms.ModelForm):
             'email': 'Enter a valid email address.',
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show non-archived iwis in the dropdown
+        self.fields['iwi'].queryset = Iwi.objects.filter(is_archived=False)
+
     def clean_citizenship_document(self):
         doc = self.cleaned_data.get('citizenship_document')
         if doc:

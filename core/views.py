@@ -44,12 +44,12 @@ def register(request):
 
 def get_hapus(request):
     iwi_id = request.GET.get('iwi_id')
-    hapus = Hapu.objects.filter(iwi_id=iwi_id).values('id', 'name')
+    hapus = Hapu.objects.filter(iwi_id=iwi_id, is_archived=False).values('id', 'name')
     return JsonResponse(list(hapus), safe=False)
 
 def get_hapus_htmx(request):
     iwi_id = request.GET.get('iwi_id') or request.GET.get('id_iwi')
-    hapus = Hapu.objects.filter(iwi_id=iwi_id)
+    hapus = Hapu.objects.filter(iwi_id=iwi_id, is_archived=False)
     return render(request, 'partials/hapu_options.html', {'hapus': hapus})
 
 def login_view(request):
@@ -90,7 +90,7 @@ def dashboard(request):
     user = request.user
     # Admin
     if user.is_staff:
-        total_iwis = Iwi.objects.count()
+        total_iwis = Iwi.objects.filter(is_archived=False).count()
         total_hapus = Hapu.objects.count()
         total_users = CustomUser.objects.count()
         return render(request, 'core/admin_dashboard.html', {
@@ -202,6 +202,97 @@ def send_welcome_email(user):
     smtp_password = settings.EMAIL_HOST_PASSWORD
     use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
     ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.ehlo()
+        if use_tls:
+            server.starttls(context=ssl_context)
+        server.login(smtp_user, smtp_password)
+        server.sendmail(msg['From'], [msg['To']], msg.as_string())
+
+def send_account_approved_email(user):
+    """Send email notification when user account is approved"""
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from core.helpers import get_logo_url, get_from_email, get_app_name
+    
+    subject = 'Account Approved - IwiConnect'
+    plain_message = (
+        'Kia ora {},\n\n'
+        'Great news! Your IwiConnect account has been approved.\n\n'
+        'You can now log in to your account and start using all the features of IwiConnect.\n\n'
+        'Naku noa,\nIwiConnect Team'
+    ).format(user.full_name)
+    
+    html_message = render_to_string('email/account_approved.html', {
+        'name': user.full_name,
+        'logo_url': get_logo_url(),
+    })
+    
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
+    msg['To'] = user.email
+    part1 = MIMEText(plain_message, 'plain')
+    part2 = MIMEText(html_message, 'html')
+    msg.attach(part1)
+    msg.attach(part2)
+    
+    smtp_host = settings.EMAIL_HOST
+    smtp_port = settings.EMAIL_PORT
+    smtp_user = settings.EMAIL_HOST_USER
+    smtp_password = settings.EMAIL_HOST_PASSWORD
+    use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
+    ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
+    
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.ehlo()
+        if use_tls:
+            server.starttls(context=ssl_context)
+        server.login(smtp_user, smtp_password)
+        server.sendmail(msg['From'], [msg['To']], msg.as_string())
+
+def send_account_rejected_email(user):
+    """Send email notification when user account is rejected"""
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from core.helpers import get_logo_url, get_from_email, get_app_name
+    
+    subject = 'Account Application Status - IwiConnect'
+    plain_message = (
+        'Kia ora {},\n\n'
+        'We regret to inform you that your IwiConnect account application has been rejected.\n\n'
+        'This may be due to incomplete information or issues with the provided documentation. '
+        'If you believe this is an error, please contact us for further assistance.\n\n'
+        'Naku noa,\nIwiConnect Team'
+    ).format(user.full_name)
+    
+    html_message = render_to_string('email/account_rejected.html', {
+        'name': user.full_name,
+        'logo_url': get_logo_url(),
+    })
+    
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = get_app_name() + ' <' + get_from_email() + '>'
+    msg['To'] = user.email
+    part1 = MIMEText(plain_message, 'plain')
+    part2 = MIMEText(html_message, 'html')
+    msg.attach(part1)
+    msg.attach(part2)
+    
+    smtp_host = settings.EMAIL_HOST
+    smtp_port = settings.EMAIL_PORT
+    smtp_user = settings.EMAIL_HOST_USER
+    smtp_password = settings.EMAIL_HOST_PASSWORD
+    use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
+    ssl_context = getattr(settings, 'EMAIL_SSL_CONTEXT', None)
+    
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.ehlo()
         if use_tls:
