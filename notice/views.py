@@ -18,12 +18,19 @@ def notice_list(request):
     audience = request.GET.get('audience')
     iwi = request.GET.get('iwi')
     hapu = request.GET.get('hapu')
-    if audience and audience != 'ALL':
+    
+    # Apply audience filter only if a specific audience is selected (not "All")
+    if audience and audience != '':
         notices = notices.filter(audience=audience)
+    
+    # Apply iwi filter if selected
     if iwi:
         notices = notices.filter(iwi_id=iwi)
+    
+    # Apply hapu filter if selected
     if hapu:
         notices = notices.filter(hapu_id=hapu)
+    
     # Pagination
     paginator = Paginator(notices, 6)
     page_number = request.GET.get('page')
@@ -67,6 +74,15 @@ def create_notice(request):
             hapu_qs = Hapu.objects.filter(id__in=hapu_ids, is_archived=False)
             iwi_qs = Iwi.objects.filter(id__in=hapu_qs.values_list('iwi_id', flat=True), is_archived=False)
             allowed_audience = [('HAPU', 'Specific Hapu')]
+    
+    # Get hapu data with iwi information for JavaScript filtering
+    hapu_data = []
+    if hapu_qs.exists():
+        hapu_data = list(hapu_qs.values('id', 'name', 'iwi_id').order_by('name'))
+    
+    # Get current datetime for minimum expiry date
+    current_datetime = timezone.now().strftime('%Y-%m-%dT%H:%M')
+    
     if request.method == 'POST':
         form = NoticeForm(request.POST, request.FILES)
         form.fields['iwi'].queryset = iwi_qs
@@ -86,7 +102,11 @@ def create_notice(request):
         form.fields['iwi'].queryset = iwi_qs
         form.fields['hapu'].queryset = hapu_qs
         form.fields['audience'].choices = allowed_audience
-    return render(request, 'notice/create_notice.html', {'form': form})
+    return render(request, 'notice/create_notice.html', {
+        'form': form,
+        'hapu_data': hapu_data,
+        'min_datetime': current_datetime,
+    })
 
 @user_passes_test(is_leader_or_admin)
 def manage_notices(request):
@@ -112,6 +132,15 @@ def edit_notice(request, pk):
             hapu_qs = Hapu.objects.filter(id__in=hapu_ids, is_archived=False)
             iwi_qs = Iwi.objects.filter(id__in=hapu_qs.values_list('iwi_id', flat=True), is_archived=False)
             allowed_audience = [('HAPU', 'Specific Hapu')]
+    
+    # Get hapu data with iwi information for JavaScript filtering
+    hapu_data = []
+    if hapu_qs.exists():
+        hapu_data = list(hapu_qs.values('id', 'name', 'iwi_id').order_by('name'))
+    
+    # Get current datetime for minimum expiry date
+    current_datetime = timezone.now().strftime('%Y-%m-%dT%H:%M')
+    
     if request.method == 'POST':
         form = NoticeForm(request.POST, request.FILES, instance=notice)
         form.fields['iwi'].queryset = iwi_qs
@@ -129,7 +158,12 @@ def edit_notice(request, pk):
         form.fields['iwi'].queryset = iwi_qs
         form.fields['hapu'].queryset = hapu_qs
         form.fields['audience'].choices = allowed_audience
-    return render(request, 'notice/edit_notice.html', {'form': form, 'notice': notice})
+    return render(request, 'notice/edit_notice.html', {
+        'form': form, 
+        'notice': notice,
+        'hapu_data': hapu_data,
+        'min_datetime': current_datetime,
+    })
 
 @user_passes_test(is_leader_or_admin)
 def delete_notice(request, pk):

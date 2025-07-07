@@ -8,7 +8,6 @@
             <label for="audience" class="form-label">Audience</label>
             <select name="audience" id="audience" class="form-select">
                 <option value="">All</option>
-                <option value="ALL" {% if audience == 'ALL' %}selected{% endif %}>All Users</option>
                 <option value="IWI" {% if audience == 'IWI' %}selected{% endif %}>Iwi</option>
                 <option value="HAPU" {% if audience == 'HAPU' %}selected{% endif %}>Hapu</option>
             </select>
@@ -27,7 +26,7 @@
             <select name="hapu" id="hapu" class="form-select">
                 <option value="">All</option>
                 {% for hapu_obj in hapus %}
-                    <option value="{{ hapu_obj.id }}" {% if hapu|default:'' == hapu_obj.id|stringformat:'s' %}selected{% endif %}>{{ hapu_obj.name }}</option>
+                    <option value="{{ hapu_obj.id }}" data-iwi-id="{{ hapu_obj.iwi_id }}" {% if hapu|default:'' == hapu_obj.id|stringformat:'s' %}selected{% endif %}>{{ hapu_obj.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -72,4 +71,109 @@
         </ul>
     </nav>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const audienceSelect = document.getElementById('audience');
+    const iwiSelect = document.getElementById('iwi');
+    const hapuSelect = document.getElementById('hapu');
+    
+    // Store all hapu options for filtering
+    const allHapuOptions = [];
+    if (hapuSelect) {
+        Array.from(hapuSelect.options).forEach(option => {
+            if (option.value) {
+                allHapuOptions.push({
+                    element: option,
+                    iwiId: option.getAttribute('data-iwi-id'),
+                    text: option.textContent,
+                    value: option.value
+                });
+            }
+        });
+    }
+    
+    function updateFilterFields() {
+        const selectedAudience = audienceSelect.value;
+        const selectedIwi = iwiSelect.value;
+        
+        // Reset hapu selection when audience or iwi changes
+        hapuSelect.value = '';
+        
+        // Show/hide and enable/disable fields based on audience selection
+        if (selectedAudience === '') {
+            // For ALL audience, hide both iwi and hapu selection
+            iwiSelect.disabled = true;
+            hapuSelect.disabled = true;
+            iwiSelect.style.display = 'none';
+            hapuSelect.style.display = 'none';
+            iwiSelect.previousElementSibling.style.display = 'none'; // Hide iwi label
+            hapuSelect.previousElementSibling.style.display = 'none'; // Hide hapu label
+        } else if (selectedAudience === 'IWI') {
+            // For IWI audience, only allow iwi selection
+            iwiSelect.disabled = false;
+            hapuSelect.disabled = true;
+            iwiSelect.style.display = 'block';
+            hapuSelect.style.display = 'none';
+            iwiSelect.previousElementSibling.style.display = 'block'; // Show iwi label
+            hapuSelect.previousElementSibling.style.display = 'none'; // Hide hapu label
+        } else if (selectedAudience === 'HAPU') {
+            // For HAPU audience, allow both iwi and hapu selection
+            iwiSelect.disabled = false;
+            hapuSelect.disabled = false;
+            iwiSelect.style.display = 'block';
+            hapuSelect.style.display = 'block';
+            iwiSelect.previousElementSibling.style.display = 'block'; // Show iwi label
+            hapuSelect.previousElementSibling.style.display = 'block'; // Show hapu label
+            updateHapuOptions(selectedIwi);
+        }
+    }
+    
+    function updateHapuOptions(selectedIwiId) {
+        // Clear current hapu options
+        hapuSelect.innerHTML = '<option value="">All</option>';
+        
+        if (selectedIwiId) {
+            // Filter hapus based on selected iwi
+            const filteredHapus = allHapuOptions.filter(hapu => hapu.iwiId === selectedIwiId);
+            
+            // Add filtered hapus to dropdown
+            filteredHapus.forEach(hapu => {
+                const option = document.createElement('option');
+                option.value = hapu.value;
+                option.textContent = hapu.text;
+                option.setAttribute('data-iwi-id', hapu.iwiId);
+                hapuSelect.appendChild(option);
+            });
+        } else {
+            // If no iwi selected, show all hapus
+            allHapuOptions.forEach(hapu => {
+                const option = document.createElement('option');
+                option.value = hapu.value;
+                option.textContent = hapu.text;
+                option.setAttribute('data-iwi-id', hapu.iwiId);
+                hapuSelect.appendChild(option);
+            });
+        }
+    }
+    
+    // Add event listeners
+    if (audienceSelect) {
+        audienceSelect.addEventListener('change', updateFilterFields);
+    }
+    
+    if (iwiSelect) {
+        iwiSelect.addEventListener('change', function() {
+            const selectedAudience = audienceSelect.value;
+            if (selectedAudience === 'HAPU' || !selectedAudience) {
+                updateHapuOptions(this.value);
+            }
+        });
+    }
+    
+    // Initialize on page load
+    updateFilterFields();
+});
+</script>
 {% endblock %} 

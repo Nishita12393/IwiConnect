@@ -43,7 +43,14 @@
             </div>
             <div class="col-md-4 mb-3">
                 {{ form.hapu.label_tag }}
-                {{ form.hapu }}
+                <select name="hapu" id="id_hapu" class="form-select{% if form.hapu.errors %} is-invalid{% endif %}">
+                    <option value="">---------</option>
+                    {% for hapu in hapu_data %}
+                        <option value="{{ hapu.id }}" data-iwi-id="{{ hapu.iwi_id }}" {% if form.hapu.value == hapu.id %}selected{% endif %}>
+                            {{ hapu.name }}
+                        </option>
+                    {% endfor %}
+                </select>
                 {% if form.hapu.help_text %}<small class="form-text text-muted">{{ form.hapu.help_text }}</small>{% endif %}
                 {% if form.hapu.errors %}<div class="text-danger">{{ form.hapu.errors.0 }}</div>{% endif %}
             </div>
@@ -51,7 +58,7 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 {{ form.expiry_date.label_tag }}
-                {{ form.expiry_date }}
+                <input type="datetime-local" name="expiry_date" id="id_expiry_date" class="form-control{% if form.expiry_date.errors %} is-invalid{% endif %}" required value="{{ form.expiry_date.value|default:'' }}" min="{{ min_datetime }}">
                 {% if form.expiry_date.help_text %}<small class="form-text text-muted">{{ form.expiry_date.help_text }}</small>{% endif %}
                 {% if form.expiry_date.errors %}<div class="text-danger">{{ form.expiry_date.errors.0 }}</div>{% endif %}
             </div>
@@ -70,26 +77,130 @@
 {% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Store all hapus data for filtering
+    const allHapus = [];
+    const hapuSelect = document.getElementById('id_hapu');
+    
+    // Collect all hapu options and their iwi data
+    if (hapuSelect) {
+      Array.from(hapuSelect.options).forEach(option => {
+        if (option.value) {
+          allHapus.push({
+            id: option.value,
+            text: option.textContent,
+            iwiId: option.getAttribute('data-iwi-id') || null
+          });
+        }
+      });
+    }
+    
     function updateIwiHapuFields() {
       const audience = document.getElementById('id_audience');
       const iwi = document.getElementById('id_iwi');
       const hapu = document.getElementById('id_hapu');
+      
       if (!audience || !iwi || !hapu) return;
+      
       if (audience.value === 'ALL') {
         iwi.disabled = true;
         hapu.disabled = true;
+        iwi.value = '';
+        hapu.value = '';
       } else if (audience.value === 'IWI') {
         iwi.disabled = false;
         hapu.disabled = true;
+        hapu.value = '';
       } else if (audience.value === 'HAPU') {
         iwi.disabled = false;
         hapu.disabled = false;
+        updateHapuOptions();
       }
     }
+    
+    function updateHapuOptions() {
+      const iwiSelect = document.getElementById('id_iwi');
+      const hapuSelect = document.getElementById('id_hapu');
+      
+      if (!iwiSelect || !hapuSelect) return;
+      
+      const selectedIwiId = iwiSelect.value;
+      
+      // Clear current options
+      hapuSelect.innerHTML = '<option value="">---------</option>';
+      
+      if (selectedIwiId) {
+        // Filter hapus based on selected iwi
+        const filteredHapus = allHapus.filter(hapu => hapu.iwiId === selectedIwiId);
+        
+        // Add filtered hapus to dropdown
+        filteredHapus.forEach(hapu => {
+          const option = document.createElement('option');
+          option.value = hapu.id;
+          option.textContent = hapu.text;
+          option.setAttribute('data-iwi-id', hapu.iwiId);
+          hapuSelect.appendChild(option);
+        });
+      }
+    }
+    
+    // Event listeners
     const audience = document.getElementById('id_audience');
+    const iwi = document.getElementById('id_iwi');
+    
     if (audience) {
       audience.addEventListener('change', updateIwiHapuFields);
-      updateIwiHapuFields();
+    }
+    
+    if (iwi) {
+      iwi.addEventListener('change', updateHapuOptions);
+    }
+    
+    // Initialize on page load
+    updateIwiHapuFields();
+    
+    // Expiry date validation
+    const expiryDateInput = document.getElementById('id_expiry_date');
+    if (expiryDateInput) {
+      // Set minimum date to current date/time
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+      
+      expiryDateInput.setAttribute('min', minDateTime);
+      
+      // Add validation on change
+      expiryDateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const currentDate = new Date();
+        
+        if (selectedDate <= currentDate) {
+          this.setCustomValidity('Expiry date must be in the future.');
+          this.classList.add('is-invalid');
+        } else {
+          this.setCustomValidity('');
+          this.classList.remove('is-invalid');
+        }
+      });
+      
+      // Validate on input to provide immediate feedback
+      expiryDateInput.addEventListener('input', function() {
+        if (this.value) {
+          const selectedDate = new Date(this.value);
+          const currentDate = new Date();
+          
+          if (selectedDate <= currentDate) {
+            this.setCustomValidity('Expiry date must be in the future.');
+            this.classList.add('is-invalid');
+          } else {
+            this.setCustomValidity('');
+            this.classList.remove('is-invalid');
+          }
+        }
+      });
     }
   });
 </script>
