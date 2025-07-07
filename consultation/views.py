@@ -49,16 +49,30 @@ def create_proposal(request):
     if not is_admin:
         iwi_ids = list(user.iwi_leaderships.values_list('iwi_id', flat=True))
         hapu_ids = list(user.hapu_leaderships.values_list('hapu_id', flat=True))
-        if iwi_ids:
-            # Iwi leader (may also be hapu leader): can select from their iwi and its hapus
-            iwi_qs = Iwi.objects.filter(id__in=iwi_ids, is_archived=False)
-            hapu_qs = Hapu.objects.filter(iwi_id__in=iwi_ids, is_archived=False)
+        # Only include non-archived iwis
+        active_iwis = list(Iwi.objects.filter(id__in=iwi_ids, is_archived=False))
+        active_hapus = list(Hapu.objects.filter(id__in=hapu_ids, is_archived=False))
+        if active_iwis:
+            iwi_qs = Iwi.objects.filter(id__in=[iwi.id for iwi in active_iwis], is_archived=False)
+        else:
+            iwi_qs = Iwi.objects.none()
+        if active_hapus:
+            hapu_qs = Hapu.objects.filter(id__in=[hapu.id for hapu in active_hapus], is_archived=False)
+        else:
+            hapu_qs = Hapu.objects.none()
+        # Determine allowed_types
+        if active_iwis and len(iwi_ids) == 1 and Iwi.objects.filter(id=iwi_ids[0], is_archived=True).exists():
+            # Only one iwi, and it is archived: do not allow IWI
+            allowed_types = [('HAPU', 'Restricted to Hapu')] if active_hapus else []
+        elif active_iwis and active_hapus:
             allowed_types = [('IWI', 'Restricted to Iwi'), ('HAPU', 'Restricted to Hapu')]
-        elif hapu_ids:
-            # Only hapu leader
-            hapu_qs = Hapu.objects.filter(id__in=hapu_ids, is_archived=False)
-            iwi_qs = Iwi.objects.filter(id__in=hapu_qs.values_list('iwi_id', flat=True))
+        elif active_iwis:
+            allowed_types = [('IWI', 'Restricted to Iwi')]
+        elif active_hapus:
             allowed_types = [('HAPU', 'Restricted to Hapu')]
+        else:
+            allowed_types = []
+    
     if request.method == 'POST':
         form = ProposalForm(request.POST)
         form.fields['iwi'].queryset = iwi_qs
@@ -77,7 +91,11 @@ def create_proposal(request):
             return redirect('consultation:proposal_detail', pk=proposal.pk)
         else:
             messages.error(request, 'Please correct the errors below and try again.')
-            return redirect('consultation:create_proposal')
+            # Use the same querysets as the initial form setup
+            form.fields['iwi'].queryset = iwi_qs
+            form.fields['hapu'].queryset = hapu_qs
+            form.fields['consultation_type'].choices = allowed_types
+            return render(request, 'consultation/create_proposal.html', {'form': form})
     else:
         form = ProposalForm(initial=initial)
         form.fields['iwi'].queryset = iwi_qs
@@ -117,37 +135,46 @@ def active_consultations(request):
     now = timezone.now()
     user = request.user
     
-    # Base queryset for active and past consultations
+    # Base queryset for active, upcoming, and past consultations
     base_qs = Proposal.objects.filter(is_draft=False)
     active_qs = base_qs.filter(start_date__lte=now, end_date__gte=now)
+    upcoming_qs = base_qs.filter(start_date__gt=now)
     past_qs = base_qs.filter(end_date__lt=now)
     
     # Filter consultations based on user access
     if user.is_staff:
         # Admin sees all consultations
         proposals_qs = active_qs.order_by('-created_at')
+        upcoming_proposals_qs = upcoming_qs.order_by('start_date')  # Order by start date for upcoming
         past_proposals_qs = past_qs.order_by('-created_at')
     else:
         # Regular users see consultations based on their access level
         user_iwi = user.iwi
-        user_hapu = user.hapu
+        # Get all hapus where the user is a leader
+        leader_hapus = list(user.hapu_leaderships.values_list('hapu_id', flat=True))
+        # Also include user's main hapu if set
+        if user.hapu and user.hapu.id not in leader_hapus:
+            leader_hapus.append(user.hapu.id)
         
-        # Build filter conditions
         active_filters = Q(consultation_type='PUBLIC')
+        upcoming_filters = Q(consultation_type='PUBLIC')
         past_filters = Q(consultation_type='PUBLIC')
         
         # Add IWI-specific consultations if user belongs to the iwi
         if user_iwi:
             active_filters |= Q(consultation_type='IWI', iwi=user_iwi)
+            upcoming_filters |= Q(consultation_type='IWI', iwi=user_iwi)
             past_filters |= Q(consultation_type='IWI', iwi=user_iwi)
         
-        # Add HAPU-specific consultations if user belongs to the hapu
-        if user_hapu:
-            active_filters |= Q(consultation_type='HAPU', hapu=user_hapu)
-            past_filters |= Q(consultation_type='HAPU', hapu=user_hapu)
+        # Add HAPU-specific consultations if user is a leader of the hapu
+        if leader_hapus:
+            active_filters |= Q(consultation_type='HAPU', hapu_id__in=leader_hapus)
+            upcoming_filters |= Q(consultation_type='HAPU', hapu_id__in=leader_hapus)
+            past_filters |= Q(consultation_type='HAPU', hapu_id__in=leader_hapus)
         
         # Apply filters and order
         proposals_qs = active_qs.filter(active_filters).order_by('-created_at')
+        upcoming_proposals_qs = upcoming_qs.filter(upcoming_filters).order_by('start_date')  # Order by start date for upcoming
         past_proposals_qs = past_qs.filter(past_filters).order_by('-created_at')
     
     # Pagination
@@ -158,9 +185,13 @@ def active_consultations(request):
     proposals = active_paginator.get_page(active_page_number)
     past_proposals = past_paginator.get_page(past_page_number)
     
+    # Get top 5 upcoming consultations (no pagination needed)
+    upcoming_proposals = upcoming_proposals_qs[:5]
+    
     return render(request, 'consultation/active_consultations.html', {
         'proposals': proposals,
         'past_proposals': past_proposals,
+        'upcoming_proposals': upcoming_proposals,
     })
 
 @login_required
@@ -170,11 +201,19 @@ def member_consultation_detail(request, pk):
     # Get the proposal and check access
     proposal = get_object_or_404(Proposal, pk=pk, is_draft=False)
     
+    # Check if consultation is past or future
+    now = timezone.now()
+    is_past = proposal.end_date < now
+    is_future = proposal.start_date > now
+    
     # Check if user has access to this consultation
     if not user.is_staff:
         # Regular users can only access consultations they're supposed to see
         user_iwi = user.iwi
-        user_hapu = user.hapu
+        # Get all hapus where the user is a leader
+        leader_hapus = list(user.hapu_leaderships.values_list('hapu_id', flat=True))
+        if user.hapu and user.hapu.id not in leader_hapus:
+            leader_hapus.append(user.hapu.id)
         
         # Check if user has access based on consultation type
         has_access = False
@@ -183,16 +222,23 @@ def member_consultation_detail(request, pk):
             has_access = True
         elif proposal.consultation_type == 'IWI' and user_iwi and proposal.iwi == user_iwi:
             has_access = True
-        elif proposal.consultation_type == 'HAPU' and user_hapu and proposal.hapu == user_hapu:
+        elif proposal.consultation_type == 'HAPU' and proposal.hapu and proposal.hapu.id in leader_hapus:
             has_access = True
         
         if not has_access:
             from django.http import HttpResponseForbidden
             return HttpResponseForbidden('You do not have permission to access this consultation.')
+    
     user_vote = Vote.objects.filter(proposal=proposal, user=request.user).first()
     voted = user_vote is not None
     comment_added = False
-    if request.method == 'POST':
+    
+    # Disallow voting if consultation is in the future
+    if request.method == 'POST' and is_future:
+        messages.error(request, 'Voting is not allowed until the consultation starts.')
+        return redirect('consultation:member_consultation_detail', pk=proposal.pk)
+    
+    if request.method == 'POST' and not is_past and not is_future:
         user_vote = Vote.objects.filter(proposal=proposal, user=request.user).first()
         voted = user_vote is not None
         if voted:
@@ -221,6 +267,10 @@ def member_consultation_detail(request, pk):
                 comment_added = True
         # Redirect after POST to prevent form resubmission
         return redirect('consultation:member_consultation_detail', pk=proposal.pk)
+    elif request.method == 'POST' and is_past:
+        messages.error(request, 'This consultation has ended. Voting is no longer allowed.')
+        return redirect('consultation:member_consultation_detail', pk=proposal.pk)
+    
     comments = proposal.comments.all() if proposal.enable_comments else []
     return render(request, 'consultation/member_consultation_detail.html', {
         'proposal': proposal,
@@ -228,6 +278,8 @@ def member_consultation_detail(request, pk):
         'user_vote': user_vote,
         'comments': comments,
         'comment_added': comment_added,
+        'is_past': is_past,
+        'is_future': is_future,
     })
 
 @login_required

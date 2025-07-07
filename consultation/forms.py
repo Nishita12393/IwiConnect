@@ -2,6 +2,7 @@ from django import forms
 from .models import Proposal, VotingOption
 from core.models import Iwi, Hapu, CustomUser
 from django.utils import timezone
+from datetime import timedelta
 
 class ProposalForm(forms.ModelForm):
     voting_options = forms.CharField(
@@ -77,17 +78,35 @@ class ProposalForm(forms.ModelForm):
 
     def clean_start_date(self):
         start_date = self.cleaned_data.get('start_date')
-        if start_date and start_date < timezone.now():
-            raise forms.ValidationError('Consultation start date and time cannot be in the past.')
+        if start_date:
+            now = timezone.now()
+            # Add a small buffer (1 minute) to account for form submission time
+            if start_date <= now:
+                raise forms.ValidationError('Consultation start date and time must be in the future.')
         return start_date
+
+    def clean_end_date(self):
+        end_date = self.cleaned_data.get('end_date')
+        if end_date:
+            now = timezone.now()
+            # Add a small buffer (1 minute) to account for form submission time
+            if end_date <= now:
+                raise forms.ValidationError('Consultation end date and time must be in the future.')
+        return end_date
 
     def clean(self):
         cleaned_data = super().clean()
         start = cleaned_data.get('start_date')
         end = cleaned_data.get('end_date')
+        
         if start and end:
             if end <= start:
                 self.add_error('end_date', 'End date must be after start date.')
+            
+            # Ensure minimum consultation duration (e.g., 1 hour)
+            min_duration = timedelta(hours=1)
+            if end - start < min_duration:
+                self.add_error('end_date', 'Consultation must last at least 1 hour.')
         
         # Validate that selected iwi and hapu are not archived
         iwi = cleaned_data.get('iwi')

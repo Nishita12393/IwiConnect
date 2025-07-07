@@ -12,33 +12,56 @@
                     <h5>Description</h5>
                     <p class="mb-3">{{ proposal.description }}</p>
                     
-                    <h5>Voting Options</h5>
-                    {% if voted %}
+                    {% if is_future %}
                         <div class="alert alert-info">
-                            <strong>You have already voted.</strong>
-                            {% if user_vote %}
-                                <p class="mb-0">Your vote: <span class="badge bg-primary">{{ user_vote.voting_option.text }}</span></p>
-                            {% endif %}
+                            <strong>This consultation has not started yet.</strong> Voting will be available once the consultation begins ({{ proposal.start_date|date:'Y-m-d H:i' }}).
+                        </div>
+                        {% if voted %}
+                            <div class="alert alert-info">
+                                <strong>Your vote:</strong> <span class="badge bg-primary">{{ user_vote.voting_option.text }}</span>
+                            </div>
+                        {% endif %}
+                    {% elif is_past %}
+                        <div class="alert alert-warning">
+                            <strong>This consultation has ended.</strong> Voting is no longer available.
+                        </div>
+                        {% if voted %}
+                            <div class="alert alert-info">
+                                <strong>Your vote:</strong> <span class="badge bg-primary">{{ user_vote.voting_option.text }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="mt-3">
+                            <a href="{% url 'consultation:consultation_result' proposal.pk %}" class="btn btn-success">View Results</a>
                         </div>
                     {% else %}
-                        <form method="post">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                {% for option in proposal.voting_options.all %}
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="voting_option" id="option{{ option.id }}" value="{{ option.id }}" required>
-                                        <label class="form-check-label" for="option{{ option.id }}">{{ option.text }}</label>
-                                    </div>
-                                {% endfor %}
+                        <h5>Voting Options</h5>
+                        {% if voted %}
+                            <div class="alert alert-info">
+                                <strong>You have already voted.</strong>
+                                {% if user_vote %}
+                                    <p class="mb-0">Your vote: <span class="badge bg-primary">{{ user_vote.voting_option.text }}</span></p>
+                                {% endif %}
                             </div>
-                            {% if proposal.enable_comments %}
+                        {% else %}
+                            <form method="post">
+                                {% csrf_token %}
                                 <div class="mb-3">
-                                    <label for="comment" class="form-label">Comment (optional):</label>
-                                    <textarea class="form-control" name="comment" id="comment" rows="3"></textarea>
+                                    {% for option in proposal.voting_options.all %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="voting_option" id="option{{ option.id }}" value="{{ option.id }}" required>
+                                            <label class="form-check-label" for="option{{ option.id }}">{{ option.text }}</label>
+                                        </div>
+                                    {% endfor %}
                                 </div>
-                            {% endif %}
-                            <button type="submit" class="btn btn-primary">Submit Vote</button>
-                        </form>
+                                {% if proposal.enable_comments %}
+                                    <div class="mb-3">
+                                        <label for="comment" class="form-label">Comment (optional):</label>
+                                        <textarea class="form-control" name="comment" id="comment" rows="3"></textarea>
+                                    </div>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary">Submit Vote</button>
+                            </form>
+                        {% endif %}
                         {% if comment_added %}
                             <div class="alert alert-success mt-3">Your comment has been added.</div>
                         {% endif %}
@@ -47,22 +70,21 @@
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-header">
-                            <h6 class="mb-0">Details</h6>
+                            <h6 class="mb-0">Consultation Details</h6>
                         </div>
                         <div class="card-body">
-                            <p><strong>Type:</strong> <span class="badge bg-primary">{{ proposal.get_consultation_type_display }}</span></p>
-                            <p><strong>Iwi:</strong> {{ proposal.iwi|default:"Not specified" }}</p>
-                            <p><strong>Hapu:</strong> {{ proposal.hapu|default:"Not specified" }}</p>
-                            <p><strong>Start:</strong> {{ proposal.start_date|date:'Y-m-d H:i' }}</p>
-                            <p><strong>End:</strong> {{ proposal.end_date|date:'Y-m-d H:i' }}</p>
-                            <p><strong>Enable Comments:</strong> 
-                                {% if proposal.enable_comments %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}
-                            </p>
-                            <p><strong>Anonymous Feedback:</strong> 
-                                {% if proposal.anonymous_feedback %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}
-                            </p>
-                            <p><strong>Created By:</strong> {{ proposal.created_by.full_name }}</p>
-                            <p><strong>Created At:</strong> {{ proposal.created_at|date:'Y-m-d H:i' }}</p>
+                            <p><strong>Start Date:</strong> {{ proposal.start_date|date:'Y-m-d H:i' }}</p>
+                            <p><strong>End Date:</strong> {{ proposal.end_date|date:'Y-m-d H:i' }}</p>
+                            <p><strong>Type:</strong> {{ proposal.get_consultation_type_display }}</p>
+                            {% if proposal.consultation_type == 'IWI' %}
+                                <p><strong>Restricted to:</strong> {{ proposal.iwi.name }}</p>
+                            {% elif proposal.consultation_type == 'HAPU' %}
+                                <p><strong>Restricted to:</strong> {{ proposal.hapu.name }} ({{ proposal.hapu.iwi.name }})</p>
+                            {% endif %}
+                            <p><strong>Comments:</strong> {% if proposal.enable_comments %}Enabled{% else %}Disabled{% endif %}</p>
+                            {% if proposal.enable_comments and proposal.anonymous_feedback %}
+                                <p><strong>Anonymous Feedback:</strong> Enabled</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

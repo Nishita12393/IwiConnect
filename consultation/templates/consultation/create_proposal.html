@@ -8,7 +8,7 @@
             <div class="card shadow-sm mt-5">
                 <div class="card-body">
                     <h2 class="mb-4">New Consultation</h2>
-                    <form method="post" class="mt-3">
+                    <form method="post" class="mt-3" id="consultation-form">
                         {% csrf_token %}
                         <div class="row mb-3">
                             <div class="col-12">
@@ -46,11 +46,13 @@
                                 {{ form.start_date.label_tag }}
                                 <input type="datetime-local" name="start_date" id="id_start_date" class="form-control{% if form.start_date.errors %} is-invalid{% endif %}" required value="{{ form.start_date.value|default:'' }}">
                                 {% if form.start_date.errors %}<div class="invalid-feedback">{{ form.start_date.errors.0 }}</div>{% endif %}
+                                <small class="form-text text-muted">Start date and time must be in the future</small>
                             </div>
                             <div class="col-md-6">
                                 {{ form.end_date.label_tag }}
                                 <input type="datetime-local" name="end_date" id="id_end_date" class="form-control{% if form.end_date.errors %} is-invalid{% endif %}" required value="{{ form.end_date.value|default:'' }}">
                                 {% if form.end_date.errors %}<div class="invalid-feedback">{{ form.end_date.errors.0 }}</div>{% endif %}
+                                <small class="form-text text-muted">End date must be after start date and at least 1 hour later</small>
                             </div>
                         </div>
                         <div class="row mb-3">
@@ -83,7 +85,7 @@
                         </div>
                         <div class="row">
                             <div class="col-12 text-end">
-                                <button type="submit" class="btn btn-primary">Save Consultation</button>
+                                <button type="submit" class="btn btn-primary" id="submit-btn">Save Consultation</button>
                             </div>
                         </div>
                     </form>
@@ -99,6 +101,95 @@
     document.addEventListener('DOMContentLoaded', function() {
         var typeField = document.getElementById('id_consultation_type');
         var hapuField = document.getElementById('id_hapu');
+        var startDateField = document.getElementById('id_start_date');
+        var endDateField = document.getElementById('id_end_date');
+        var submitBtn = document.getElementById('submit-btn');
+        var form = document.getElementById('consultation-form');
+        
+        // Set minimum date to current date/time
+        function setMinDates() {
+            var now = new Date();
+            // Add 1 minute buffer
+            now.setMinutes(now.getMinutes() + 1);
+            var minDateTime = now.toISOString().slice(0, 16);
+            
+            startDateField.min = minDateTime;
+            endDateField.min = minDateTime;
+        }
+        
+        // Validate dates
+        function validateDates() {
+            var startDate = new Date(startDateField.value);
+            var endDate = new Date(endDateField.value);
+            var now = new Date();
+            var isValid = true;
+            
+            // Clear previous error states
+            startDateField.classList.remove('is-invalid');
+            endDateField.classList.remove('is-invalid');
+            
+            // Remove previous error messages
+            var startError = startDateField.parentNode.querySelector('.invalid-feedback');
+            var endError = endDateField.parentNode.querySelector('.invalid-feedback');
+            if (startError && !startError.textContent.includes('backend')) {
+                startError.remove();
+            }
+            if (endError && !endError.textContent.includes('backend')) {
+                endError.remove();
+            }
+            
+            // Check if start date is in the past
+            if (startDate <= now) {
+                showFieldError(startDateField, 'Start date must be in the future');
+                isValid = false;
+            }
+            
+            // Check if end date is in the past
+            if (endDate <= now) {
+                showFieldError(endDateField, 'End date must be in the future');
+                isValid = false;
+            }
+            
+            // Check if end date is after start date
+            if (startDate && endDate && endDate <= startDate) {
+                showFieldError(endDateField, 'End date must be after start date');
+                isValid = false;
+            }
+            
+            // Check minimum duration (1 hour)
+            if (startDate && endDate && (endDate - startDate) < (60 * 60 * 1000)) {
+                showFieldError(endDateField, 'Consultation must last at least 1 hour');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Show field error
+        function showFieldError(field, message) {
+            field.classList.add('is-invalid');
+            var errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback';
+            errorDiv.textContent = message;
+            field.parentNode.appendChild(errorDiv);
+        }
+        
+        // Update end date minimum when start date changes
+        function updateEndDateMin() {
+            if (startDateField.value) {
+                var startDate = new Date(startDateField.value);
+                // Add 1 hour minimum
+                startDate.setHours(startDate.getHours() + 1);
+                endDateField.min = startDate.toISOString().slice(0, 16);
+                
+                // If end date is before new minimum, clear it
+                if (endDateField.value && new Date(endDateField.value) <= startDate) {
+                    endDateField.value = '';
+                }
+            }
+        }
+        
+        // Toggle hapu field based on consultation type
         function toggleHapu() {
             if (typeField.value === 'IWI') {
                 hapuField.value = '';
@@ -107,9 +198,33 @@
                 hapuField.disabled = false;
             }
         }
+        
+        // Initialize
+        setMinDates();
+        toggleHapu();
+        
+        // Event listeners
         if (typeField && hapuField) {
             typeField.addEventListener('change', toggleHapu);
-            toggleHapu();
+        }
+        
+        if (startDateField && endDateField) {
+            startDateField.addEventListener('change', function() {
+                updateEndDateMin();
+                validateDates();
+            });
+            
+            endDateField.addEventListener('change', validateDates);
+        }
+        
+        // Form submission validation
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!validateDates()) {
+                    e.preventDefault();
+                    alert('Please correct the date errors before submitting.');
+                }
+            });
         }
     });
 </script>

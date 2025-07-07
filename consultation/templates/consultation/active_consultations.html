@@ -1,7 +1,8 @@
 {% extends 'core/base.html' %}
-{% block page_title %}Active Consultations - {{ app_name }}{% endblock %}
+{% block page_title %}Consultations - {{ app_name }}{% endblock %}
 {% block content %}
 <div class="container">
+    <!-- Active and Past Consultations Section -->
     <div class="row">
         <div class="col-lg-6 mb-4">
             <h2>Active Consultations</h2>
@@ -83,5 +84,30 @@
             {% endif %}
         </div>
     </div>
+
+        <!-- Upcoming Consultations Section -->
+        {% if upcoming_proposals %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2>Upcoming Consultations</h2>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                    {% for proposal in upcoming_proposals %}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm border-warning">
+                            <div class="card-body">
+                                <h5 class="card-title text-warning">{{ proposal.title }}</h5>
+                                <p class="mb-2"><span class="badge bg-warning text-dark">{{ proposal.get_consultation_type_display }}</span></p>
+                                <p class="mb-1"><strong>Start:</strong> {{ proposal.start_date|date:'Y-m-d H:i' }}</p>
+                                <p class="mb-1"><strong>End:</strong> {{ proposal.end_date|date:'Y-m-d H:i' }}</p>
+                                <p class="mb-2"><small class="text-muted">Voting will be available when consultation starts</small></p>
+                                <a href="{% url 'consultation:member_consultation_detail' proposal.pk %}" class="btn btn-outline-warning btn-sm mt-2">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 </div>
 {% endblock %} 
