@@ -177,7 +177,13 @@ def profile(request):
                 return redirect('profile')
             else:
                 messages.error(request, 'Please correct the password errors below.')
-                return redirect('profile')
+                return render(request, 'core/profile.html', {
+                    'user': user,
+                    'password_form': password_form,
+                    'email_form': email_form,
+                    'password_success': password_success,
+                    'email_success': email_success,
+                })
         elif 'change_email' in request.POST:
             email_form = EmailChangeForm(user, request.POST)
             if email_form.is_valid():
@@ -187,7 +193,13 @@ def profile(request):
                 return redirect('profile')
             else:
                 messages.error(request, 'Please correct the email errors below.')
-                return redirect('profile')
+                return render(request, 'core/profile.html', {
+                    'user': user,
+                    'password_form': password_form,
+                    'email_form': email_form,
+                    'password_success': password_success,
+                    'email_success': email_success,
+                })
     return render(request, 'core/profile.html', {
         'user': user,
         'password_form': password_form,

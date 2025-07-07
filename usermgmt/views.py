@@ -85,7 +85,9 @@ def manage_iwi_leaders(request):
     selected_iwi = Iwi.objects.filter(id=selected_iwi_id, is_archived=False).first() if selected_iwi_id else None
     users = CustomUser.objects.filter(is_staff=False)
     if selected_iwi:
-        users = users.filter(iwi=selected_iwi)
+        users = users.filter(iwi=selected_iwi).exclude(
+            iwi_leaderships__iwi=selected_iwi  # Exclude users who are already leaders
+        ).order_by('full_name')
     leaders = IwiLeader.objects.filter(iwi=selected_iwi) if selected_iwi else []
     if request.method == 'POST' and selected_iwi:
         add_user_id = request.POST.get('add_leader')
