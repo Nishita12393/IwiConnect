@@ -24,24 +24,51 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 {{ form.start_datetime.label_tag }}
-                                <input type="datetime-local" name="start_datetime" id="id_start_datetime" class="form-control{% if form.start_datetime.errors %} is-invalid{% endif %}" required value="{{ form.start_datetime.value|default:'' }}">
+                                <input type="datetime-local" name="start_datetime" id="id_start_datetime" class="form-control{% if form.start_datetime.errors %} is-invalid{% endif %}" required value="{{ form.start_datetime.value|default:'' }}" min="{{ min_datetime }}">
                                 {% if form.start_datetime.errors %}<div class="invalid-feedback">{{ form.start_datetime.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 {{ form.end_datetime.label_tag }}
-                                <input type="datetime-local" name="end_datetime" id="id_end_datetime" class="form-control{% if form.end_datetime.errors %} is-invalid{% endif %}" required value="{{ form.end_datetime.value|default:'' }}">
+                                <input type="datetime-local" name="end_datetime" id="id_end_datetime" class="form-control{% if form.end_datetime.errors %} is-invalid{% endif %}" required value="{{ form.end_datetime.value|default:'' }}" min="{{ min_datetime }}">
                                 {% if form.end_datetime.errors %}<div class="invalid-feedback">{{ form.end_datetime.errors.0 }}</div>{% endif %}
                             </div>
                         </div>
                         <div class="mb-3">
+                            {{ form.location_type.label_tag }}
+                            {{ form.location_type|add_class:'form-select' }}
+                            {% if form.location_type.errors %}<div class="invalid-feedback d-block">{{ form.location_type.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3" id="location-field">
                             {{ form.location.label_tag }}
-                            <input type="text" name="location" id="id_location" class="form-control{% if form.location.errors %} is-invalid{% endif %}" required minlength="2" maxlength="200" value="{{ form.location.value|default:'' }}">
+                            <input type="text" name="location" id="id_location" class="form-control{% if form.location.errors %} is-invalid{% endif %}" minlength="2" maxlength="200" value="{{ form.location.value|default:'' }}">
                             {% if form.location.errors %}<div class="invalid-feedback">{{ form.location.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3" id="online-url-field" style="display: none;">
+                            {{ form.online_url.label_tag }}
+                            <input type="url" name="online_url" id="id_online_url" class="form-control{% if form.online_url.errors %} is-invalid{% endif %}" placeholder="https://example.com/meeting" value="{{ form.online_url.value|default:'' }}">
+                            {% if form.online_url.errors %}<div class="invalid-feedback">{{ form.online_url.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="mb-3">
                             {{ form.visibility.label_tag }}
                             {{ form.visibility|add_class:'form-select' }}
                             {% if form.visibility.errors %}<div class="invalid-feedback d-block">{{ form.visibility.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3" id="iwi-field" style="display: none;">
+                            {{ form.iwi.label_tag }}
+                            {{ form.iwi|add_class:'form-select' }}
+                            {% if form.iwi.errors %}<div class="invalid-feedback d-block">{{ form.iwi.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3" id="hapu-field" style="display: none;">
+                            {{ form.hapu.label_tag }}
+                            <select name="hapu" id="id_hapu" class="form-select{% if form.hapu.errors %} is-invalid{% endif %}">
+                                <option value="">---------</option>
+                                {% for hapu_obj in form.hapu.field.queryset %}
+                                    <option value="{{ hapu_obj.id }}" data-iwi-id="{{ hapu_obj.iwi_id }}" {% if form.hapu.value == hapu_obj.id %}selected{% endif %}>
+                                        {{ hapu_obj.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.hapu.errors %}<div class="invalid-feedback d-block">{{ form.hapu.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="mb-3">
                             {{ form.attachment.label_tag }}
@@ -59,6 +86,206 @@
 {% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Location type change handler
+    const locationTypeSelect = document.getElementById('id_location_type');
+    const locationField = document.getElementById('location-field');
+    const onlineUrlField = document.getElementById('online-url-field');
+    const locationInput = document.getElementById('id_location');
+    const onlineUrlInput = document.getElementById('id_online_url');
+    
+    function updateLocationFields() {
+      const selectedType = locationTypeSelect.value;
+      
+      if (selectedType === 'PHYSICAL') {
+        locationField.style.display = 'block';
+        onlineUrlField.style.display = 'none';
+        locationInput.required = true;
+        onlineUrlInput.required = false;
+        onlineUrlInput.value = '';
+      } else if (selectedType === 'ONLINE') {
+        locationField.style.display = 'none';
+        onlineUrlField.style.display = 'block';
+        locationInput.required = false;
+        onlineUrlInput.required = true;
+        locationInput.value = '';
+      }
+    }
+    
+    // Add event listener for location type changes
+    if (locationTypeSelect) {
+      locationTypeSelect.addEventListener('change', updateLocationFields);
+      // Initialize on page load
+      updateLocationFields();
+    }
+    
+    // Store all hapu options for filtering
+    const allHapuOptions = [];
+    const hapuSelect = document.getElementById('id_hapu');
+    
+    // Collect all hapu options and their iwi data
+    if (hapuSelect) {
+      Array.from(hapuSelect.options).forEach(option => {
+        if (option.value) {
+          allHapuOptions.push({
+            id: option.value,
+            text: option.textContent,
+            iwiId: option.getAttribute('data-iwi-id') || null
+          });
+        }
+      });
+    }
+    
+    // Visibility change handler
+    const visibilitySelect = document.getElementById('id_visibility');
+    const iwiField = document.getElementById('iwi-field');
+    const hapuField = document.getElementById('hapu-field');
+    const iwiSelect = document.getElementById('id_iwi');
+    
+    function updateVisibilityFields() {
+      const selectedVisibility = visibilitySelect.value;
+      
+      // Reset selections when visibility changes
+      if (iwiSelect) iwiSelect.value = '';
+      if (hapuSelect) hapuSelect.value = '';
+      
+      if (selectedVisibility === 'PUBLIC') {
+        // Hide both iwi and hapu fields for public events
+        iwiField.style.display = 'none';
+        hapuField.style.display = 'none';
+        if (iwiSelect) iwiSelect.required = false;
+        if (hapuSelect) hapuSelect.required = false;
+      } else if (selectedVisibility === 'IWI') {
+        // Show only iwi field for iwi-specific events
+        iwiField.style.display = 'block';
+        hapuField.style.display = 'none';
+        if (iwiSelect) iwiSelect.required = true;
+        if (hapuSelect) hapuSelect.required = false;
+      } else if (selectedVisibility === 'HAPU') {
+        // Show both iwi and hapu fields for hapu-specific events
+        iwiField.style.display = 'block';
+        hapuField.style.display = 'block';
+        if (iwiSelect) iwiSelect.required = true;
+        if (hapuSelect) hapuSelect.required = true;
+        updateHapuOptions();
+      }
+    }
+    
+    function updateHapuOptions() {
+      if (!iwiSelect || !hapuSelect) return;
+      
+      const selectedIwiId = iwiSelect.value;
+      
+      // Clear current hapu options
+      hapuSelect.innerHTML = '<option value="">---------</option>';
+      
+      if (selectedIwiId) {
+        // Filter hapus based on selected iwi
+        const filteredHapus = allHapuOptions.filter(hapu => hapu.iwiId === selectedIwiId);
+        
+        // Add filtered hapus to dropdown
+        filteredHapus.forEach(hapu => {
+          const option = document.createElement('option');
+          option.value = hapu.id;
+          option.textContent = hapu.text;
+          option.setAttribute('data-iwi-id', hapu.iwiId);
+          hapuSelect.appendChild(option);
+        });
+      }
+    }
+    
+    // Add event listeners for visibility and iwi changes
+    if (visibilitySelect) {
+      visibilitySelect.addEventListener('change', updateVisibilityFields);
+    }
+    
+    if (iwiSelect) {
+      iwiSelect.addEventListener('change', function() {
+        const selectedVisibility = visibilitySelect.value;
+        if (selectedVisibility === 'HAPU') {
+          updateHapuOptions();
+        }
+      });
+    }
+    
+    // Initialize visibility fields on page load
+    updateVisibilityFields();
+    
+    // Date/time validation
+    const startDateTimeInput = document.getElementById('id_start_datetime');
+    const endDateTimeInput = document.getElementById('id_end_datetime');
+    
+    if (startDateTimeInput && endDateTimeInput) {
+      // Set minimum date to current date/time
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+      
+      startDateTimeInput.setAttribute('min', minDateTime);
+      endDateTimeInput.setAttribute('min', minDateTime);
+      
+      // Validate start datetime
+      startDateTimeInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const currentDate = new Date();
+        
+        if (selectedDate <= currentDate) {
+          this.setCustomValidity('Start date/time must be in the future.');
+          this.classList.add('is-invalid');
+        } else {
+          this.setCustomValidity('');
+          this.classList.remove('is-invalid');
+          // Update end datetime minimum
+          endDateTimeInput.setAttribute('min', this.value);
+          // Validate end datetime if it has a value
+          if (endDateTimeInput.value) {
+            validateEndDateTime();
+          }
+        }
+      });
+      
+      // Validate end datetime
+      function validateEndDateTime() {
+        const startDate = new Date(startDateTimeInput.value);
+        const endDate = new Date(endDateTimeInput.value);
+        
+        if (endDate <= startDate) {
+          endDateTimeInput.setCustomValidity('End date/time must be after start date/time.');
+          endDateTimeInput.classList.add('is-invalid');
+        } else {
+          endDateTimeInput.setCustomValidity('');
+          endDateTimeInput.classList.remove('is-invalid');
+        }
+      }
+      
+      endDateTimeInput.addEventListener('change', validateEndDateTime);
+      
+      // Validate on input to provide immediate feedback
+      startDateTimeInput.addEventListener('input', function() {
+        if (this.value) {
+          const selectedDate = new Date(this.value);
+          const currentDate = new Date();
+          
+          if (selectedDate <= currentDate) {
+            this.setCustomValidity('Start date/time must be in the future.');
+            this.classList.add('is-invalid');
+          } else {
+            this.setCustomValidity('');
+            this.classList.remove('is-invalid');
+          }
+        }
+      });
+      
+      endDateTimeInput.addEventListener('input', function() {
+        if (this.value && startDateTimeInput.value) {
+          validateEndDateTime();
+        }
+      });
+    }
+    
     // File validation
     const fileInput = document.getElementById('id_attachment');
     if (fileInput) {

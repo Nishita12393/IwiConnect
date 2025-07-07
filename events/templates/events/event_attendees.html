@@ -1,0 +1,103 @@
+{% extends 'core/base.html' %}
+{% block page_title %}Event Attendees: {{ event.title }} - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">Event Attendees</h3>
+                        <a href="{% url 'events:event_detail' event.id %}" class="btn btn-outline-secondary">Back to Event</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h5>{{ event.title }}</h5>
+                        <p class="text-muted mb-0">
+                            {{ event.start_datetime|date:'D, d M Y H:i' }} - {{ event.end_datetime|date:'D, d M Y H:i' }}
+                        </p>
+                        <p class="text-muted">
+                            Total attendees: {{ attendee_count }} person{{ attendee_count|pluralize }}
+                        </p>
+                    </div>
+                    
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for participant in page_obj %}
+                                    <tr>
+                                        <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+                                        <td>{{ participant.user.full_name }}</td>
+                                        <td>{{ participant.user.email }}</td>
+                                        <td>{{ participant.joined_at|date:'M d, Y H:i' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="Attendees pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">&laquo; First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&laquo; First</span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Previous</span>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next</span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Last &raquo;</span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            No attendees have joined this event yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

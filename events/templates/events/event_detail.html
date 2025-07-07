@@ -13,19 +13,34 @@
                     {% endif %}
                     <h2 class="mb-3">{{ event.title }}</h2>
                     <p class="text-muted mb-2">{{ event.start_datetime|date:'D, d M Y H:i' }} - {{ event.end_datetime|date:'D, d M Y H:i' }}</p>
-                    <p class="mb-2"><strong>Location:</strong> {{ event.location|default:'TBA' }}</p>
+                    <p class="mb-2">
+                        <strong>Location Type:</strong> {{ event.get_location_type_display }}
+                    </p>
+                    {% if event.location_type == 'PHYSICAL' and event.location %}
+                        <p class="mb-2"><strong>Location:</strong> {{ event.location }}</p>
+                    {% elif event.location_type == 'ONLINE' and event.online_url %}
+                        <p class="mb-2">
+                            <strong>Online Event:</strong> 
+                            <a href="{{ event.online_url }}" target="_blank" class="btn btn-outline-primary btn-sm">Join Online Event</a>
+                        </p>
+                    {% endif %}
                     <p class="mb-2"><strong>Visibility:</strong> {{ event.get_visibility_display }}</p>
+                    <p class="mb-2"><strong>Attendees:</strong> {{ attendee_count }} person{{ attendee_count|pluralize }}</p>
                     <p class="mb-3">{{ event.description }}</p>
                     {% if event.attachment %}
                         <div class="mb-3">
                             <a href="{{ event.attachment.url }}" target="_blank" class="btn btn-outline-secondary">Download Attachment</a>
                         </div>
                     {% endif %}
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         {% if not joined %}
                             <a href="{% url 'events:join_event' event.id %}" class="btn btn-success">Join Event</a>
                         {% else %}
                             <span class="badge bg-success align-self-center">You have joined this event</span>
+                        {% endif %}
+                        
+                        {% if can_view_attendees and attendee_count > 0 %}
+                            <a href="{% url 'events:event_attendees' event.id %}" class="btn btn-outline-primary">View Attendees</a>
                         {% endif %}
                     </div>
                 </div>
