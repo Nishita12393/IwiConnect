@@ -2,13 +2,14 @@ from django.shortcuts import render, redirect
 from .forms import RegistrationForm, LoginForm, PasswordResetRequestForm, SetPasswordForm
 from django.contrib import messages
 from django.http import JsonResponse
-from core.models import Hapu, Iwi, CustomUser
+from core.models import Hapu, Iwi, CustomUser, PasswordResetToken
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from core.helpers import get_app_name, get_logo_url, get_from_email
 from django import forms
 from django.core.mail import send_mail
+from django.db import models
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -430,12 +431,19 @@ def password_reset_request(request):
             email = form.cleaned_data['email']
             try:
                 user = CustomUser.objects.get(email=email, state='VERIFIED')
-                # Generate reset token and store it in session for demo purposes
-                # In production, you'd want to store this in the database with an expiration
+                
+                # Clear any existing tokens for this user
+                PasswordResetToken.objects.filter(user=user).delete()
+                
+                # Generate reset token and store it in database
                 reset_token = generate_reset_token()
-                request.session['reset_token'] = reset_token
-                request.session['reset_email'] = email
-                request.session['reset_expires'] = (timezone.now() + timedelta(hours=24)).isoformat()
+                expires_at = timezone.now() + timedelta(hours=24)
+                
+                PasswordResetToken.objects.create(
+                    user=user,
+                    token=reset_token,
+                    expires_at=expires_at
+                )
                 
                 # Send email in background thread with error logging
                 threading.Thread(
@@ -466,54 +474,55 @@ def password_reset_confirm(request, token):
         return redirect('dashboard')
     
     # Check if token is valid and not expired
-    stored_token = request.session.get('reset_token')
-    stored_email = request.session.get('reset_email')
-    stored_expires = request.session.get('reset_expires')
-    
-    if not all([stored_token, stored_email, stored_expires]):
-        messages.error(request, 'Invalid or expired password reset link.')
-        return redirect('login')
-    
     try:
-        expires = datetime.fromisoformat(stored_expires)
-        if timezone.now() > expires:
-            messages.error(request, 'Password reset link has expired.')
-            # Clear session data
-            for key in ['reset_token', 'reset_email', 'reset_expires']:
-                request.session.pop(key, None)
+        reset_token = PasswordResetToken.objects.get(token=token)
+        
+        if not reset_token.is_valid():
+            if reset_token.is_expired():
+                messages.error(request, 'Password reset link has expired.')
+            else:
+                messages.error(request, 'This password reset link has already been used.')
+            # Clean up expired/used tokens
+            PasswordResetToken.objects.filter(
+                models.Q(is_used=True) | models.Q(expires_at__lt=timezone.now())
+            ).delete()
             return redirect('login')
-    except ValueError:
-        messages.error(request, 'Invalid password reset link.')
-        return redirect('login')
-    
-    if token != stored_token:
-        messages.error(request, 'Invalid password reset link.')
-        return redirect('login')
-    
-    if request.method == 'POST':
-        form = SetPasswordForm(request.POST)
-        if form.is_valid():
-            try:
-                user = CustomUser.objects.get(email=stored_email, state='VERIFIED')
+        
+        user = reset_token.user
+        
+        if request.method == 'POST':
+            form = SetPasswordForm(request.POST)
+            if form.is_valid():
+                # Update user password
                 user.set_password(form.cleaned_data['new_password1'])
                 user.save()
                 
-                # Clear session data
-                for key in ['reset_token', 'reset_email', 'reset_expires']:
-                    request.session.pop(key, None)
+                # Mark token as used
+                reset_token.is_used = True
+                reset_token.save()
+                
+                # Clean up expired/used tokens
+                PasswordResetToken.objects.filter(
+                    models.Q(is_used=True) | models.Q(expires_at__lt=timezone.now())
+                ).delete()
                 
                 messages.success(request, 'Your password has been reset successfully. You can now login with your new password.')
                 return redirect('login')
-            except CustomUser.DoesNotExist:
-                messages.error(request, 'User account not found.')
-                return redirect('login')
+            else:
+                # If form is invalid, redirect back to the form with error message
+                messages.error(request, 'Please check your password and try again.')
+                return redirect('password_reset_confirm', token=token)
         else:
-            # If form is invalid, redirect back to the form with error message
-            messages.error(request, 'Please check your password and try again.')
-            return redirect('password_reset_confirm', token=token)
-    else:
-        form = SetPasswordForm()
-    
-    return render(request, 'password_reset_confirm.html', {'form': form})
+            form = SetPasswordForm()
+        
+        return render(request, 'password_reset_confirm.html', {'form': form})
+        
+    except PasswordResetToken.DoesNotExist:
+        messages.error(request, 'Invalid or expired password reset link.')
+        # Clean up expired/used tokens
+        PasswordResetToken.objects.filter(
+            models.Q(is_used=True) | models.Q(expires_at__lt=timezone.now())
+        ).delete()
+        return redirect('login')
 
 # The template 'register.html' should be placed in 'core/templates/register.html'

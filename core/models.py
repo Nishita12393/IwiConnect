@@ -122,3 +122,25 @@ class HapuLeader(models.Model):
     user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='hapu_leaderships')
     class Meta:
         unique_together = ('hapu', 'user')
+
+class PasswordResetToken(models.Model):
+    """Model to store password reset tokens"""
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='password_reset_tokens')
+    token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"Reset token for {self.user.email}"
+    
+    def is_expired(self):
+        """Check if the token has expired"""
+        return timezone.now() > self.expires_at
+    
+    def is_valid(self):
+        """Check if the token is valid (not expired and not used)"""
+        return not self.is_expired() and not self.is_used
+    
+    class Meta:
+        ordering = ['-created_at']
