@@ -440,7 +440,8 @@ def password_reset_request(request):
                 # Send email in background thread with error logging
                 threading.Thread(
                     target=send_email_with_logging, 
-                    args=(send_password_reset_email, user, reset_token, request, 'password_reset'), 
+                    args=(send_password_reset_email, user, reset_token, request), 
+                    kwargs={'email_type': 'password_reset'},
                     daemon=True
                 ).start()
                 
