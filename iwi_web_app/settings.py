@@ -161,6 +161,20 @@ DEFAULT_FROM_EMAIL = Config.get_from_email()
 if EMAIL_USE_TLS:
     EMAIL_SSL_CONTEXT = ssl._create_unverified_context()
 
+# Ensure logs directory exists before configuring logging
+logs_dir = os.path.join(BASE_DIR, 'logs')
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
+
+# Ensure log files exist
+django_log_file = os.path.join(logs_dir, 'django.log')
+email_log_file = os.path.join(logs_dir, 'email.log')
+
+for log_file in [django_log_file, email_log_file]:
+    if not os.path.exists(log_file):
+        with open(log_file, 'w') as f:
+            pass  # Create empty file
+
 # Logging Configuration
 LOGGING = {
     'version': 1,
@@ -179,13 +193,13 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'filename': django_log_file,
             'formatter': 'verbose',
         },
         'email_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'email.log'),
+            'filename': email_log_file,
             'formatter': 'verbose',
         },
         'console': {
