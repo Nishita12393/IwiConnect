@@ -55,7 +55,8 @@ def register(request):
             # Send welcome email in a background thread with error logging
             threading.Thread(
                 target=send_email_with_logging, 
-                args=(send_welcome_email, user, 'welcome'), 
+                args=(send_welcome_email, user), 
+                kwargs={'email_type': 'welcome'},
                 daemon=True
             ).start()
             messages.success(request, 'Thank you for registering. Your account is pending admin verification.')
