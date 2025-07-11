@@ -1217,7 +1217,8 @@ class HapuManagementIntegrationTestCase(TestCase):
         # 1. Create Hapu
         create_data = {
             'name': 'Lifecycle Test Hapu',
-            'description': 'Initial description'
+            'description': 'Initial description',
+            'iwi': self.iwi1.id  # Include iwi field since user is leader of multiple iwis
         }
         response = self.client.post(reverse('hapumgmt:hapu_create'), create_data)
         self.assertEqual(response.status_code, 302)
@@ -1231,17 +1232,13 @@ class HapuManagementIntegrationTestCase(TestCase):
         # 2. Edit Hapu
         edit_data = {
             'name': 'Lifecycle Test Hapu',
-            'description': 'Updated description'
+            'description': 'Updated description',
+            'iwi': self.iwi1.id  # Include iwi field since user is leader of multiple iwis
         }
         response = self.client.post(reverse('hapumgmt:hapu_edit', args=[hapu.pk]), edit_data)
-        # Check if successful (302) or form errors (200)
-        if response.status_code == 200:
-            # Form had errors, let's check what they are
-            self.assertContains(response, 'form')
-        else:
-            self.assertEqual(response.status_code, 302)
-            hapu.refresh_from_db()
-            self.assertEqual(hapu.description, 'Updated description')
+        self.assertEqual(response.status_code, 302)
+        hapu.refresh_from_db()
+        self.assertEqual(hapu.description, 'Updated description')
         
         # 3. Archive Hapu
         archive_data = {
