@@ -99,35 +99,8 @@ class EventForm(forms.ModelForm):
 
     def clean_visibility(self):
         visibility = self.cleaned_data.get('visibility')
-        iwi = self.cleaned_data.get('iwi')
-        hapu = self.cleaned_data.get('hapu')
-        
-        if visibility == 'IWI':
-            if not iwi:
-                raise forms.ValidationError('Iwi is required when visibility is Iwi-specific.')
-            if hapu:
-                raise forms.ValidationError('Hapu must be empty when visibility is Iwi-specific.')
-        elif visibility == 'HAPU':
-            if not hapu:
-                raise forms.ValidationError('Hapu is required when visibility is Hapu-specific.')
-            if not iwi:
-                raise forms.ValidationError('Iwi is required when visibility is Hapu-specific.')
-            if hapu.iwi != iwi:
-                raise forms.ValidationError('Selected hapu must belong to the selected iwi.')
-        elif visibility == 'PUBLIC':
-            if iwi or hapu:
-                raise forms.ValidationError('Iwi and hapu must be empty when visibility is Public.')
-        
+        # Only validate the visibility field itself here (if needed)
         return visibility
-
-    def clean_attachment(self):
-        attachment = self.cleaned_data.get('attachment')
-        if attachment:
-            if not attachment.content_type.startswith('image/'):
-                raise forms.ValidationError('Only image files are allowed.')
-            if attachment.size > 2 * 1024 * 1024:
-                raise forms.ValidationError('Image file size must be under 2MB.')
-        return attachment
 
     def clean(self):
         cleaned_data = super().clean()
@@ -138,4 +111,34 @@ class EventForm(forms.ModelForm):
                 self.add_error('end_datetime', 'End date/time must be after start date/time.')
             if start < timezone.now():
                 self.add_error('start_datetime', 'Start date/time cannot be in the past.')
-        return cleaned_data 
+
+        # Cross-field validation for visibility, iwi, hapu
+        visibility = cleaned_data.get('visibility')
+        iwi = cleaned_data.get('iwi')
+        hapu = cleaned_data.get('hapu')
+        if visibility == 'IWI':
+            if not iwi:
+                self.add_error('visibility', 'Iwi is required when visibility is Iwi-specific.')
+            if hapu:
+                self.add_error('visibility', 'Hapu must be empty when visibility is Iwi-specific.')
+        elif visibility == 'HAPU':
+            if not hapu:
+                self.add_error('visibility', 'Hapu is required when visibility is Hapu-specific.')
+            if not iwi:
+                self.add_error('visibility', 'Iwi is required when visibility is Hapu-specific.')
+            if hapu and iwi and hapu.iwi != iwi:
+                self.add_error('visibility', 'Selected hapu must belong to the selected iwi.')
+        elif visibility == 'PUBLIC':
+            if iwi or hapu:
+                self.add_error('visibility', 'Iwi and hapu must be empty when visibility is Public.')
+
+        return cleaned_data
+
+    def clean_attachment(self):
+        attachment = self.cleaned_data.get('attachment')
+        if attachment:
+            if not attachment.content_type.startswith('image/'):
+                raise forms.ValidationError('Only image files are allowed.')
+            if attachment.size > 2 * 1024 * 1024:
+                raise forms.ValidationError('Image file size must be under 2MB.')
+        return attachment 
