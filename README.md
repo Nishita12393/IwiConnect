@@ -114,7 +114,6 @@ A comprehensive Django web application for managing Iwi and Hapu communities, co
 
 10. **Access the application**
     - Main site: http://localhost:8000
-    - Admin panel: http://localhost:8000/admin
 
 ## 📁 Project Structure
 
